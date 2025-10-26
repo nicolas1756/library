@@ -31,7 +31,7 @@ public class File { //Handles reading and writing to files
     }
     
     
-    public HashMap<String, List<?>> readFromFile(String path) {
+    public HashMap<String, List<?>> readFromFile(String path) { //read serialised data of object from specified file
         HashMap<String, List<?>> dataHashMap = new HashMap<>();
 
         try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(path))) {
