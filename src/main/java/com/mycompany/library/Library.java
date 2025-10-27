@@ -12,9 +12,13 @@ public class Library {
 
     public static void main(String[] args) {
         System.out.println("--Library Management--");
-        File file = new File();
-        file.saveToFile();
-        System.out.print(file.readFromFile("book.ser"));
+        
+        FileHandling fileHandling = new FileHandling();
+        System.out.print(fileHandling.readFromFile("account.ser"));
+        
+        Auth auth = new Auth();
+        auth.authMenu();
+                
     }
     
     
