@@ -15,7 +15,7 @@ public class Library {
         
         //file read/write test
         FileHandling fileHandling = new FileHandling();
-        System.out.println(fileHandling.readFromFile("account.ser", User.class));
+        System.out.println(fileHandling.readFromFile("accounts.ser", User.class));
         
         Auth auth = new Auth();
         Scanner scanner = new Scanner(System.in);
