@@ -1,73 +1,68 @@
 package com.mycompany.library;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.File;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.FileInputStream;
-import java.util.HashMap;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
+
 /**
- *
  * @author nic
  */
-public class FileHandling { //Handles reading and writing to files
-    
-    public boolean writetoFile(String path, HashMap value) {
-        
-        //Intialises arrayList to add data
-        ArrayList<HashMap<String, ?>> arrayListData = new ArrayList<>();
 
+public class FileHandling {
 
-        File file = new File(path); //checks if file exists
-        if (file.exists()) {
-            //Retrives existing file and puts it in the variable orginalFile
-            ArrayList<HashMap<String, ?>> originalFile = new ArrayList<>();
-            originalFile = readFromFile(path);
-            
-            //appends new value to end of original file
-            arrayListData = originalFile;
-            originalFile.add(value);
-            
-            // Tries to write arrayList to a file specified by 'path' variable
-            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
-                outputStream.writeObject(arrayListData);
-            } catch (IOException e) {
-                return false;
-            }
+    // Generic write method (safe + preserves previous data)
+    public <T extends Serializable> boolean writeToFile(String path, T value, Class<T> type) {
+        ArrayList<T> dataList = readFromFile(path, type);
+
+        // Add new object
+        dataList.add(value);
+
+        // Write updated list safely
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
+            outputStream.writeObject(dataList);
+            return true;
+        } catch (IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+            return false;
         }
-        else{
-            //pushes new value into empty arrayList
-            arrayListData.add(value);
-            // Tries to write arrayList to a file specified by 'path' variable
-            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
-                outputStream.writeObject(arrayListData);
-            } catch (IOException e) {
-                return false;
-            }
-        }
-               
-
-
-        // If data was successfully saved, returns true.
-        return true;
     }
-    
-    
-    public ArrayList<HashMap<String, ?>> readFromFile(String path) { //read serialised data of array list from specified file
-        ArrayList<HashMap<String, ?>> arrayListData = new ArrayList<>();
 
+
+    public <T extends Serializable> ArrayList<T> readFromFile(String path, Class<T> type) {
+        File file = new File(path);
+        ArrayList<T> dataList = new ArrayList<>();
+
+        // Create empty file if missing
+        if (!file.exists()) {
+            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
+                outputStream.writeObject(dataList);
+            } catch (IOException e) {
+                System.out.println("⚠️ Error creating new file: " + e.getMessage());
+            }
+            return dataList;
+        }
+
+        // Attempt to read
         try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(path))) {
-            // Retrieves data from file and typecasts it to correct datatype.
-            arrayListData = (ArrayList<HashMap<String, ?>>) inputStream.readObject();
-        } catch (IOException | ClassNotFoundException e1) {
-            System.out.println("Failed to read file: " + e1.getMessage());
+            Object obj = inputStream.readObject();
+
+            if (obj instanceof ArrayList<?>) {
+                ArrayList<?> rawList = (ArrayList<?>) obj;
+
+                for (Object item : rawList) {
+                    if (!type.isInstance(item)) {
+                        System.out.println("Warning: File contains unexpected type: " + item.getClass().getName());
+                        return new ArrayList<>(); // return empty if mismatch
+                    }
+                }
+
+                dataList = (ArrayList<T>) rawList;
+            } else {
+                System.out.println("Warning: File does not contain an ArrayList.");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Failed to read file: " + e.getMessage());
         }
 
-        // Returns arrayList
-        return arrayListData;
+        return dataList;
     }
-
 }
