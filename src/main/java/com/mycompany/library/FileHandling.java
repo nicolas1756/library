@@ -11,6 +11,7 @@ public class FileHandling {
 
     // Generic write method (safe + preserves previous data)
     public <T extends Serializable> boolean writeToFile(String path, T value, Class<T> type) {
+        path = "library-management/" + path;
         ArrayList<T> dataList = readFromFile(path, type);
 
         // Add new object
@@ -28,6 +29,7 @@ public class FileHandling {
 
 
     public <T extends Serializable> ArrayList<T> readFromFile(String path, Class<T> type) {
+        path = "library-management/" + path;
         File file = new File(path);
         ArrayList<T> dataList = new ArrayList<>();
 

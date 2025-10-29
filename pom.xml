@@ -10,4 +10,8 @@
         <maven.compiler.release>25</maven.compiler.release>
         <exec.mainClass>com.mycompany.library.Library</exec.mainClass>
     </properties>
+    <configuration>
+        <source>25</source>
+        <target>25</target>
+    </configuration>
 </project>
