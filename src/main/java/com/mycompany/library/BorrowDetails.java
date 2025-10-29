@@ -29,7 +29,7 @@ public class BorrowDetails implements Serializable {
         this.bookId = bookId;
         this.dateBorrowed = dateBorrowed;
         this.dueDate = dueDate;
-        this.dateReturned = null; // not returned yet
+        this.dateReturned = null; 
         this.status = status;
     }
 
@@ -49,7 +49,6 @@ public class BorrowDetails implements Serializable {
     public void setDateReturned(Date dateReturned) { this.dateReturned = dateReturned; }
     public void setStatus(String status) { this.status = status; }
 
-    // Helper method
     public boolean isReturned() {
         return dateReturned != null;
     }

@@ -9,23 +9,26 @@ import java.util.HashMap;
  */
 public class Auth {
     
-    //encapsulated varible to store current logged in user
-    private String currentUser = ""; 
+    Scanner scanner = new Scanner(System.in);
+    FileHandling fileHandling = new FileHandling();
     
+    //encapsulated varible to store current logged in user
+    private User currentUser;
+
+
     // Getter
-    public String getCurrentUser() {
-      return currentUser;
+    public User getCurrentUser() {
+        return currentUser;
     }
 
     // Setter
-    public void setCurrentUser(String newName) {
-      this.currentUser = newName;
+    public void setCurrentUser(User newUser) {
+        this.currentUser = newUser;
     }
-
     
-    
-    Scanner scanner = new Scanner(System.in);
-    FileHandling fileHandling = new FileHandling();
+    public boolean isLoggedIn() {
+        return currentUser != null;
+    }
     
     public void authMenu(){
        
@@ -54,9 +57,13 @@ public class Auth {
         }
         
     }
+    
+    public void logout(){
+        currentUser = null;
+    }
         
     public void login() {
-        System.out.println("--Login--");
+        System.out.println("\n--Login--");
         System.out.println("\nEnter -1 to exit");
         System.out.println("----------------");
         while (true) {
@@ -78,25 +85,43 @@ public class Auth {
             
             if (authenticate(username, password)) {
                 //if valid username and password
+                System.out.println("-----------------");
                 System.out.println("Login successful!");
+                System.out.println("Hello, " + (String) getCurrentUser().getFullName());
+                System.out.println("-----------------");
+                break;
             } else {
                 //if invalid username and password
                 System.out.println("Incorrect username or password. Please try again.\n");
             }
         }
+        
+        if(!isLoggedIn()){
+            System.out.println("There was as error logging in. Please try again ");
+        }
     }
     
     public boolean authenticate(String username, String password) {
         // Retrieve list of accounts
-        ArrayList<HashMap<String, ?>> accounts = fileHandling.readFromFile("account.ser");
+        ArrayList<User> accounts = fileHandling.readFromFile("accounts.ser", User.class);
 
-        for (HashMap<String, ?> account : accounts) { //loops through accounts
-            String storedUsername = (String) account.get("username");//get stored username and password for each account
-            String storedPassword = (String) account.get("password");
-
+        for (User account : accounts) { //loops through accounts
+            String storedUsername = account.getUsername();//get stored username and password for each account
+            String storedPassword = account.getPassword();;
+            String storedFullname = account.getFullName();;
+            String storedRole = account.getRole();;
+            
             if (storedUsername != null && storedPassword != null) { //ensure stored username and password is not null
                 if (storedUsername.equals(username) && storedPassword.equals(password)) { //checks if username and password match
-                    setCurrentUser(username);
+                    
+                    User user;
+                    if ("Librarian".equalsIgnoreCase(storedRole)) {
+                        user = new Librarian(storedUsername, storedPassword, storedFullname);
+                    } else {
+                        user = new Reader(storedUsername, storedPassword, storedFullname);
+                    }
+
+                    setCurrentUser(user); // store it globally
                     return true;
                 }
             }
@@ -109,33 +134,47 @@ public class Auth {
         System.out.println("-- Register New Account --");
         System.out.println("Enter -1 at any time to cancel\n");
 
+        // 🧹 Clear any leftover newline from previous Scanner inputs
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+
         while (true) {
             System.out.print("Enter your full name: ");
-            String fullName = scanner.next();
+            String fullName = scanner.nextLine().trim();
 
             if (fullName.equals("-1")) {
                 authMenu();
-                return false; // Exit method
+                return false;
             }
+            
+            if (fullName.equals("")) {
+                System.out.println("Fullname can't be empty, please try again.");
+                continue;
+             }
 
             String username;
             while (true) {
                 System.out.print("Enter your username: ");
-                username = scanner.next();
+                username = scanner.nextLine().trim();
 
                 if (username.equals("-1")) {
                     authMenu();
                     return false;
                 }
+                
+                if (username.equals("")) {
+                    System.out.println("Username can't be empty, please try again.");
+                    continue;
+                }
 
-                ArrayList<HashMap<String, ?>> accounts = fileHandling.readFromFile("account.ser"); //get list of accounts
 
-                boolean foundUsername = false; //check for repeating usernam to ensure uniqueness
-                for (HashMap<String, ?> account : accounts) { //loop through accounts
-                    String storedUsername = (String) account.get("username"); //username for current looped through account
+                ArrayList<User> accounts = fileHandling.readFromFile("accounts.ser", User.class);
 
-                    if (storedUsername != null && storedUsername.equals(username)) { //if username is not unique
-                        System.out.println("Username is already taken, please try again.\n");
+                boolean foundUsername = false;
+                for (User account : accounts) {
+                    if (account.getUsername().equals(username)) {
+                        System.out.println("Username is already taken, please try again.");
                         foundUsername = true;
                         break;
                     }
@@ -146,25 +185,42 @@ public class Auth {
                 }
             }
 
-            System.out.print("Enter your password: ");
-            String password = scanner.next();
+            String password;
+            while (true) {
+                System.out.print("Enter your password (min 8 char): ");
+                password = scanner.nextLine().trim();
 
-            if (password.equals("-1")) {
-                authMenu();
-                return false;
+                if (password.equals("-1")) {
+                    authMenu();
+                    return false;
+                }
+                
+                if (password.equals("")) {
+                    System.out.println("Password can't be empty, please try again.");
+                    continue;
+                }
+                
+                if (password.length() < 8) {
+                    System.out.println("Password length must be at least 8 characters.");
+                    continue;
+                }
+
+                break;
             }
 
-            HashMap<String, String> newUser = new HashMap<>(); //formats new user data into a hashmap
-            newUser.put("fullName", fullName);
-            newUser.put("username", username);
-            newUser.put("password", password);
+
+            User newUser = new Reader(username, password, fullName);
+  
+            fileHandling.writeToFile("accounts.ser", newUser, User.class);
+
+            System.out.println("\nAccount successfully created!");
             
-            fileHandling.writetoFile("account.ser", newUser); //write new account to file account.ser
-        
             break;
         }
-        
+
         return true;
     }
+
+
 }
 

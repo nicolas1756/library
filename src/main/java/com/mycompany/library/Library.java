@@ -24,14 +24,12 @@ public class Library {
             if (!auth.isLoggedIn()) {
                 auth.authMenu(); // login/register
             } else {
-                mainMenu(auth, scanner);
+                auth.getCurrentUser().displayMenu(auth);
             }
         }
     }
 
-    public static void mainMenu(Auth auth, Scanner scanner) {
-        auth.getCurrentUser().displayMenu();
-    }
+
 
     
     
