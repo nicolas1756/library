@@ -4,6 +4,7 @@
  */
 package com.mycompany.library;
 import java.io.Serializable;
+import java.util.Scanner;
 /**
  *
  * @author nic
@@ -46,6 +47,10 @@ public abstract class User implements Serializable {
                 '}';
     }
     
-    // Each role will have its own menu
-    public abstract void displayMenu(Auth auth);
+    // Each role will have its own mainmenu
+    public abstract void displayMainMenu(Auth auth);
+
+    // Each role will be given its own menu when selecting, 
+    // For librarians this will be for every book, for readers this will be for borrowed books
+    public abstract void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks);
 }

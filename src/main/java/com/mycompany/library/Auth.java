@@ -34,9 +34,10 @@ public class Auth {
        
         //loops until a valid option in given
         while(true){
-            System.out.println("\n--Welcome--"); //menu options
-            System.out.println("1: Returning user");
-            System.out.println("2: New user");   
+            System.out.println("\n=============" + Ansi.BOLD + " Library Management " + Ansi.RESET +"=============");
+            System.out.println(Ansi.PURPLE + "1:" + Ansi.RESET + " Returning user");
+            System.out.println(Ansi.PURPLE + "2:" + Ansi.RESET + " New user");   
+            System.out.println("==============================================");
             System.out.print("Enter: ");
             
             String menuOption = scanner.next();
@@ -63,9 +64,9 @@ public class Auth {
     }
         
     public void login() {
-        System.out.println("\n--Login--");
-        System.out.println("\nEnter -1 to exit");
-        System.out.println("----------------");
+        System.out.println("====================" + Ansi.BOLD + " Login " + Ansi.RESET +"===================");
+        System.out.println(Ansi.RED + "Enter -1 to exit" + Ansi.RESET);
+        System.out.println("==============================================");
         while (true) {
             System.out.print("Enter your username: ");
             String username = scanner.next();
@@ -85,10 +86,9 @@ public class Auth {
             
             if (authenticate(username, password)) {
                 //if valid username and password
-                System.out.println("-----------------");
-                System.out.println("Login successful!");
-                System.out.println("Hello, " + (String) getCurrentUser().getFullName());
-                System.out.println("-----------------");
+        System.out.println("==============================================\n");
+                System.out.println(Ansi.PURPLE + "Login successful!" + Ansi.RESET);
+                System.out.println(Ansi.PURPLE + "Hello, " + Ansi.BLUE + (String) getCurrentUser().getFullName() + Ansi.PURPLE + Ansi.RESET );
                 break;
             } else {
                 //if invalid username and password
@@ -131,10 +131,10 @@ public class Auth {
     }
         
     public boolean registerAcc() {
-        System.out.println("-- Register New Account --");
-        System.out.println("Enter -1 at any time to cancel\n");
+        System.out.println("============" + Ansi.BOLD + " Register New Account " + Ansi.RESET + "============");
+        System.out.println(Ansi.RED + "Enter -1 at any time to cancel" + Ansi.RESET);
+        System.out.println("==============================================");
 
-        // 🧹 Clear any leftover newline from previous Scanner inputs
         if (scanner.hasNextLine()) {
             scanner.nextLine();
         }
@@ -149,7 +149,7 @@ public class Auth {
             }
             
             if (fullName.equals("")) {
-                System.out.println("Fullname can't be empty, please try again.");
+                System.out.println(Ansi.RED + "Fullname can't be empty, please try again." + Ansi.RESET );
                 continue;
              }
 
@@ -164,7 +164,7 @@ public class Auth {
                 }
                 
                 if (username.equals("")) {
-                    System.out.println("Username can't be empty, please try again.");
+                    System.out.println(Ansi.RED + "Username can't be empty, please try again." + Ansi.RESET);
                     continue;
                 }
 
@@ -174,7 +174,7 @@ public class Auth {
                 boolean foundUsername = false;
                 for (User account : accounts) {
                     if (account.getUsername().equals(username)) {
-                        System.out.println("Username is already taken, please try again.");
+                        System.out.println(Ansi.RED + "Username is already taken, please try again." + Ansi.RESET);
                         foundUsername = true;
                         break;
                     }
@@ -196,12 +196,12 @@ public class Auth {
                 }
                 
                 if (password.equals("")) {
-                    System.out.println("Password can't be empty, please try again.");
+                    System.out.println(Ansi.RED + "Password can't be empty, please try again." + Ansi.RESET);
                     continue;
                 }
                 
                 if (password.length() < 8) {
-                    System.out.println("Password length must be at least 8 characters.");
+                    System.out.println(Ansi.RED + "Password length must be at least 8 characters." + Ansi.RESET);
                     continue;
                 }
 

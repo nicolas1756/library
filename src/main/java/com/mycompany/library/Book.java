@@ -17,7 +17,7 @@ public class Book implements Serializable {
     private ArrayList<BorrowDetails> borrowDetails;
 
     public Book(String title, String author, String yearPublished, String description) {
-        this.bookId = "B-" + UUID.randomUUID().toString().substring(0, 8);
+        this.bookId = "B" + title.replaceAll("\\s+", "").substring(0, 3).toUpperCase() + UUID.randomUUID().toString().substring(0, 4);
         this.title = title;
         this.author = author;
         this.yearPublished = yearPublished;

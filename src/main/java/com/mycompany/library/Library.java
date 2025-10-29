@@ -11,20 +11,23 @@ import java.util.Scanner;
 public class Library {
 
     public static void main(String[] args) {
-        System.out.println("--Library Management--");
-        
+
+
+
         //file read/write test
         FileHandling fileHandling = new FileHandling();
-        System.out.println(fileHandling.readFromFile("accounts.ser", User.class));
-        
         Auth auth = new Auth();
         Scanner scanner = new Scanner(System.in);
+        
+        //System.out.println(fileHandling.readFromFile("accounts.ser", User.class));
+        
+
         
         while (true) {
             if (!auth.isLoggedIn()) {
                 auth.authMenu(); // login/register
             } else {
-                auth.getCurrentUser().displayMenu(auth);
+                auth.getCurrentUser().displayMainMenu(auth);
             }
         }
     }

@@ -15,41 +15,91 @@ public class Librarian extends User {
         super(username, password, fullName, "Librarian");
     }
 
+
     @Override
-    public void displayMenu(Auth auth) {
+    public void displayMainMenu(Auth auth) {
+        ManageBooks manageBooks = new ManageBooks();
         Scanner scanner = new Scanner(System.in);
-        
-        System.out.println("1. Add/Remove Books");
-        System.out.println("2. View All Borrow Records");
-        System.out.println("3. Manage Users");
-        System.out.println("4. Logout");
-        System.out.print("Enter your choice: ");
+
+        System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
+        System.out.println(Ansi.PURPLE + "1." + Ansi.RESET + " Manage Books");
+        System.out.println("   -> Add/remove/edit the collection of books.");
+        System.out.println(Ansi.PURPLE + "2." + Ansi.RESET + " View All Borrow Records");
+        System.out.println("   -> View all borrowed books and their statuses.");
+        System.out.println(Ansi.PURPLE + "3." + Ansi.RESET + " Logout");
+        System.out.println("   -> Exit your account.");
+        System.out.println("==============================================");
+        System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+
 
         String input = scanner.next();
 
         switch (input) {
             case "1":
-                System.out.println("Managing books (Add/Remove)...");
-                // call your manageBooks() method here
+                System.out.println(Ansi.PURPLE + "Fetching books..." + Ansi.RESET);
+                displayManageBooksMenu(auth, scanner, manageBooks);
                 break;
 
             case "2":
-                System.out.println("Viewing all borrow records...");
-                // call your viewAllBorrowRecords() method here
+                System.out.println(Ansi.PURPLE + "Fetching borrow records..." + Ansi.RESET);
                 break;
 
             case "3":
-                System.out.println("Managing users...");
-                // call your manageUsers() method here
-                break;
-
-            case "4":
-                System.out.println("Logging out...");
+                System.out.println(Ansi.RED + "Logging out..." + Ansi.RESET);
                 auth.logout();
                 break;
 
             default:
-                System.out.println("Invalid choice. Please try again.");
+                System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
         }
     }
+
+    public void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks) {
+        boolean untilExit = true;
+        while (untilExit) {
+            System.out.println("\n================" + Ansi.BOLD + " Manage Books " + Ansi.RESET +"================");
+            System.out.println(Ansi.PURPLE + "1." + Ansi.RESET + " Add a new Book");
+            System.out.println("   -> Adds a new book to the library.");
+            System.out.println(Ansi.PURPLE + "2." + Ansi.RESET + " Remove a Book");
+            System.out.println("   -> Removes a book from the library.");
+            System.out.println(Ansi.PURPLE + "3." + Ansi.RESET + " Edit a Book");
+            System.out.println("   -> Modifys an existing book.");
+            System.out.println(Ansi.PURPLE + "4." + Ansi.RESET + " Back");
+            System.out.println("   -> Goes back to main menu.");
+            System.out.println("==============================================");
+            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+
+            String input = scanner.next();
+
+            switch (input) {
+                case "1":
+                    System.out.println(Ansi.PURPLE + "Add a book..." + Ansi.RESET);
+                    manageBooks.addBook();
+                    break;
+
+                case "2":
+                    System.out.println(Ansi.PURPLE + "Remove a book..." + Ansi.RESET);
+                    manageBooks.removeBook("");
+                    break;
+
+                case "3":
+                    System.out.println(Ansi.PURPLE + "Edit a book..." + Ansi.RESET);
+                    manageBooks.removeBook("");
+                    break;
+
+                case "4":
+                    untilExit = false;
+                    System.out.println(Ansi.PURPLE + "Going back..." + Ansi.RESET);
+                    auth.getCurrentUser().displayMainMenu(auth);
+                    break;
+
+                default:
+                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+            }
+        
+        }
+
+    }
+
+        
 }
