@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Iterator;
 
 public class ManageBooks {
 
@@ -24,7 +25,7 @@ public class ManageBooks {
             return;
         }
 
-        boolean supportsUnicode = false;
+        boolean supportsUnicode = true;
  
         
         // Choose border characters based on support
@@ -101,30 +102,34 @@ public class ManageBooks {
     }
 
 
-    public void printLibrarianTable() {
+    public void printLibrarianTable(Boolean promptDes) {
         ArrayList<Book> books = getAllBooks();
         printTable(books, EnumSet.allOf(Column.class));
 
-        System.out.println("\nEnter a Book ID to view its description (or press Enter to skip)");
-        System.out.println("==============================================");
+        if(promptDes){
+            System.out.println("\nEnter a Book ID to view its description (or press Enter to skip)");
+            System.out.println("==============================================");
 
-        String input = scanner.nextLine().trim();
+            String input = scanner.nextLine().trim();
 
-        // If user just presses Enter, skip
-        if (input.isEmpty()) {
-            return;
-        }
-
-        // Look for a matching Book ID
-        for (Book book : books) {
-            if (book.getBookId().equalsIgnoreCase(input)) {
-                System.out.println("Description: " + book.getDescription());
+            // If user just presses Enter, skip
+            if (input.isEmpty()) {
                 return;
             }
+
+            // Look for a matching Book ID
+            for (Book book : books) {
+                if (book.getBookId().equalsIgnoreCase(input)) {
+                    System.out.println("Description: " + book.getDescription());
+                    return;
+                }
+            }
+
+            // If no match found
+            System.out.println("\u001B[31mBook ID not found.\u001B[0m");
         }
 
-        // If no match found
-        System.out.println("\u001B[31mBook ID not found.\u001B[0m");
+        
     }
 
 
@@ -206,15 +211,55 @@ public class ManageBooks {
         }
 
         Book newBook = new Book(title, author, year, description);
-        fileHandling.writeToFile("books.ser", newBook, Book.class);
+        fileHandling.appendToFile("books.ser", newBook, Book.class);
         System.out.println("==============================================");
         System.out.println(Ansi.PURPLE + newBook + " successfully added!" + Ansi.RESET);
     }
 
     // Remove a book by title
-    public void removeBook(String bookID) {
+    public void removeBook() {
+        System.out.println("==============================================");
+        printLibrarianTable(false);
+        System.out.println(Ansi.RED + "Enter -1 to go back" + Ansi.RESET);
+        System.out.println("==============================================");
+
+        System.out.print(Ansi.YELLOW + "Enter the Book ID to remove: " );
+        String bookID = scanner.nextLine().trim();
         
+
+        
+        if (bookID.equals("-1")) {
+            return;
+        }
+
+
+        ArrayList<Book> books = getAllBooks();
+
+        if (books == null || books.isEmpty()) {
+            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            return;
+        }
+
+        // Find and remove book safely
+        boolean found = false;
+        Iterator<Book> iterator = books.iterator();
+        while (iterator.hasNext()) {
+            Book book = iterator.next();
+            if (book.getBookId().equalsIgnoreCase(bookID)) {
+                iterator.remove(); // safe removal during iteration
+                fileHandling.overrideFile("books.ser", books);
+                System.out.println(Ansi.PURPLE + "Book with ID " + bookID + " has been removed." + Ansi.RESET);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            System.out.println(Ansi.RED + "Book ID not found." + Ansi.RESET);
+        }
+        System.out.println("==============================================");
     }
+
 
     // Edit a book's details
     public void editBook(String bookID) {

@@ -84,17 +84,17 @@ public class Librarian extends User {
 
                 case "2":
                     System.out.println(Ansi.PURPLE + "Remove a book..." + Ansi.RESET);
-                    manageBooks.removeBook("");
+                    manageBooks.removeBook();
                     break;
 
                 case "3":
                     System.out.println(Ansi.PURPLE + "Edit a book..." + Ansi.RESET);
-                    manageBooks.removeBook("");
+                    manageBooks.removeBook();
                     break;
 
                 case "4":
                     System.out.println(Ansi.PURPLE + "Printing table..." + Ansi.RESET);
-                    manageBooks.printLibrarianTable();
+                    manageBooks.printLibrarianTable(true);
                     break;
 
                 case "5":

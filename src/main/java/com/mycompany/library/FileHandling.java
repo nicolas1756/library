@@ -9,8 +9,24 @@ import java.util.ArrayList;
 
 public class FileHandling {
 
+
+    public <T extends Serializable> boolean overrideFile(String path, ArrayList<T> value) {
+
+        ArrayList<T> dataList = value;
+        path = "Data/" + path;
+
+        // Write updated list safely
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
+            outputStream.writeObject(dataList);
+            return true;
+        } catch (IOException e) {
+            System.out.println(Ansi.RED + "Error writing to file: " + e.getMessage() + Ansi.RESET);
+            return false;
+        }
+    }
+
     // Generic write method (safe + preserves previous data)
-    public <T extends Serializable> boolean writeToFile(String path, T value, Class<T> type) {
+    public <T extends Serializable> boolean appendToFile(String path, T value, Class<T> type) {
 
         ArrayList<T> dataList = readFromFile(path, type);
         path = "Data/" + path;
@@ -23,7 +39,7 @@ public class FileHandling {
             outputStream.writeObject(dataList);
             return true;
         } catch (IOException e) {
-            System.out.println("Error writing to file: " + e.getMessage());
+            System.out.println(Ansi.RED + "Error writing to file: " + e.getMessage() + Ansi.RESET);
             return false;
         }
     }
@@ -39,7 +55,7 @@ public class FileHandling {
             try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
                 outputStream.writeObject(dataList);
             } catch (IOException e) {
-                System.out.println("⚠️ Error creating new file: " + e.getMessage());
+                System.out.println(Ansi.RED + "Error creating new file: " + e.getMessage() + Ansi.RESET);
             }
             return dataList;
         }
@@ -53,17 +69,17 @@ public class FileHandling {
 
                 for (Object item : rawList) {
                     if (!type.isInstance(item)) {
-                        System.out.println("Warning: File contains unexpected type: " + item.getClass().getName());
+                        System.out.println(Ansi.RED + "Warning: File contains unexpected type: " + item.getClass().getName() + Ansi.RESET);
                         return new ArrayList<>(); // return empty if mismatch
                     }
                 }
 
                 dataList = (ArrayList<T>) rawList;
             } else {
-                System.out.println("Warning: File does not contain an ArrayList.");
+                System.out.println(Ansi.RED + "Warning: File does not contain an ArrayList." + Ansi.RESET);
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Failed to read file: " + e.getMessage());
+            System.out.println(Ansi.RED + "Failed to read file: " + e.getMessage() + Ansi.RESET);
         }
 
         return dataList;

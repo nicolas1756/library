@@ -211,7 +211,7 @@ public class Auth {
 
             User newUser = new Reader(username, password, fullName);
   
-            fileHandling.writeToFile("accounts.ser", newUser, User.class);
+            fileHandling.appendToFile("accounts.ser", newUser, User.class);
 
             System.out.println("\nAccount successfully created!");
             
