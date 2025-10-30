@@ -17,6 +17,10 @@ public class Book implements Serializable {
     private ArrayList<BorrowDetails> borrowDetails;
 
     public Book(String title, String author, String yearPublished, String description) {
+        // Pad short inputs with 'x' characters if they're less than 3 characters
+        title = title.length() < 3 ? title + "000".substring(0, 3 - title.length()) : title;
+        author = author.length() < 3 ? author + "000".substring(0, 3 - author.length()) : author;
+        
         this.bookId = "B" + title.replaceAll("\\s+", "").substring(0, 3).toUpperCase() + UUID.randomUUID().toString().substring(0, 4);
         this.title = title;
         this.author = author;
