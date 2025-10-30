@@ -13,6 +13,7 @@ public class ManageBooks {
 
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
+    consoleUtil ConsoleUtils = new consoleUtil();
 
     // Define columns as an enum
     public enum Column {
@@ -45,7 +46,7 @@ public class ManageBooks {
         final int titleWidth = 25;
         final int authorWidth = 15;
         final int yearWidth = 6;
-        final int dateWidth = 25;
+        final int dateWidth = 17;
 
         // Prepare dynamic parts
         StringBuilder top = new StringBuilder(TL);
@@ -148,7 +149,7 @@ public class ManageBooks {
         int step = 0;
 
         System.out.println("=================" + Ansi.BOLD + " Add a Book " + Ansi.RESET +"=================");
-        System.out.println(Ansi.RED + "Enter -1 to go back" + Ansi.RESET);
+        System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
 
         while (!inputComplete) {
@@ -156,7 +157,7 @@ public class ManageBooks {
                 case 0: // Title
                     System.out.print("Enter book title: ");
                     title = scanner.nextLine().trim();
-                    if (title.equals("-1")) {
+                    if (title.equals("0")) {
                         return;
                     }
                     if (!title.isEmpty()) {
@@ -169,7 +170,7 @@ public class ManageBooks {
                 case 1: // Author
                     System.out.print("Enter author name: ");
                     author = scanner.nextLine().trim();
-                    if (author.equals("-1")) {
+                    if (author.equals("0")) {
                         step--;
                         continue;
                     }
@@ -183,7 +184,7 @@ public class ManageBooks {
                 case 2: // Year
                     System.out.print("Enter publication year: ");
                     year = scanner.nextLine().trim();
-                    if (year.equals("-1")) {
+                    if (year.equals("0")) {
                         step--;
                         continue;
                     }
@@ -197,7 +198,7 @@ public class ManageBooks {
                 case 3: // Description
                     System.out.print("Enter book description: ");
                     description = scanner.nextLine().trim();
-                    if (description.equals("-1")) {
+                    if (description.equals("0")) {
                         step--;
                         continue;
                     }
@@ -213,22 +214,22 @@ public class ManageBooks {
         Book newBook = new Book(title, author, year, description);
         fileHandling.appendToFile("books.ser", newBook, Book.class);
         System.out.println("==============================================");
-        System.out.println(Ansi.PURPLE + newBook + " successfully added!" + Ansi.RESET);
+        System.out.println(Ansi.ORANGE + newBook + " successfully added!" + Ansi.RESET);
     }
 
     // Remove a book by title
     public void removeBook() {
-        System.out.println("==============================================");
+        System.out.println("==============================================\n");
         printLibrarianTable(false);
-        System.out.println(Ansi.RED + "Enter -1 to go back" + Ansi.RESET);
+        System.out.println("\n" + Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
 
         System.out.print(Ansi.YELLOW + "Enter the Book ID to remove: " );
         String bookID = scanner.nextLine().trim();
-        
+        System.out.print(Ansi.RESET);
 
         
-        if (bookID.equals("-1")) {
+        if (bookID.equals("0")) {
             return;
         }
 
@@ -247,9 +248,18 @@ public class ManageBooks {
             Book book = iterator.next();
             if (book.getBookId().equalsIgnoreCase(bookID)) {
                 iterator.remove(); // safe removal during iteration
-                fileHandling.overrideFile("books.ser", books);
-                System.out.println(Ansi.PURPLE + "Book with ID " + bookID + " has been removed." + Ansi.RESET);
+
                 found = true;
+
+                if (ConsoleUtils.confirmAction("Are you sure? this action cannot be undone.")) {
+                    System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
+                    fileHandling.overrideFile("books.ser", books);
+                    System.out.println(Ansi.ORANGE + "Book with ID " + bookID + " has been removed." + Ansi.RESET);
+                }
+                else{
+                    System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                }
+
                 break;
             }
         }
@@ -262,8 +272,119 @@ public class ManageBooks {
 
 
     // Edit a book's details
-    public void editBook(String bookID) {
-        // Method implementation here
+    public void editBook() {
+        System.out.println("==============================================");
+        printLibrarianTable(false);
+        System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
+        System.out.println("==============================================");
+
+        System.out.print(Ansi.YELLOW + "Enter the Book ID to edit: " );
+        String bookID = scanner.nextLine().trim();
+        System.out.print(Ansi.RESET);
+
+        
+        if (bookID.equals("0")) {
+            return;
+        }
+
+
+        ArrayList<Book> books = getAllBooks();
+
+        if (books == null || books.isEmpty()) {
+            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            return;
+        }
+
+        // Find and remove book safely
+        boolean found = false;
+        Iterator<Book> iterator = books.iterator();
+        while (iterator.hasNext()) {
+            Book book = iterator.next();
+            if (book.getBookId().equalsIgnoreCase(bookID)) {
+                System.out.println(Ansi.ORANGE + "Editing Book: " + book.getTitle() + Ansi.RESET);
+                found = true;
+                while (true) {
+                    System.out.println("==============================================");
+                    System.out.println("\nSelect field to edit:\n");
+                    
+                    System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Title");
+                    System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Author");
+                    System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Year Published");
+                    System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Description");
+                    System.out.println(Ansi.ORANGE + "5." + Ansi.RESET + " Save and Exit");
+                    System.out.println(Ansi.ORANGE + "6." + Ansi.RESET + " Back without saving");
+
+                    System.out.print(Ansi.YELLOW + "\nEnter choice: " + Ansi.RESET);
+                    
+                    String choice = scanner.nextLine().trim();
+
+                    switch (choice) {
+                        case "1":
+                            System.out.print("Enter new title: ");
+                            String newTitle = scanner.nextLine().trim();
+                            if (!newTitle.isEmpty()) {
+                                book.setTitle(newTitle);
+                                System.out.println(Ansi.ORANGE + "Title updated." + Ansi.RESET);
+                            } else {
+                                System.out.println(Ansi.RED + "Title cannot be empty!" + Ansi.RESET);
+                            }
+                            break;
+                        case "2":
+                            System.out.print("Enter new author: ");
+                            String newAuthor = scanner.nextLine().trim();
+                            if (!newAuthor.isEmpty()) {
+                                book.setAuthor(newAuthor);
+                                System.out.println(Ansi.ORANGE + "Author updated." + Ansi.RESET);
+                            } else {
+                                System.out.println(Ansi.RED + "Author cannot be empty!" + Ansi.RESET);
+                            }
+                            break;
+                        case "3":
+                            System.out.print("Enter new year published: ");
+                            String newYear = scanner.nextLine().trim();
+                            if (!newYear.isEmpty()) {
+                                book.setYearPublished(newYear);
+                                System.out.println(Ansi.ORANGE + "Year Published updated." + Ansi.RESET);
+                            } else {
+                                System.out.println(Ansi.RED + "Year Published cannot be empty!" + Ansi.RESET);
+                            }
+                            break;
+                        case "4":
+                            System.out.print("Enter new description: ");
+                            String newDescription = scanner.nextLine().trim();
+                            if (!newDescription.isEmpty()) {
+                                book.setDescription(newDescription);
+                                System.out.println(Ansi.ORANGE + "Description updated." + Ansi.RESET);
+                            } else {
+                                System.out.println(Ansi.RED + "Description cannot be empty!" + Ansi.RESET);
+                            }
+                            break;
+                        case "5":
+                            fileHandling.overrideFile("books.ser", books);
+                            System.out.println(Ansi.ORANGE + "Changes saved." + Ansi.RESET);
+                            return;
+                        case "6":
+                        case "0":
+                            if (ConsoleUtils.confirmAction("Are you sure you want to exit?")) {
+                                System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
+                                return;
+                            }
+                            else{
+                                System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                                break;
+                            }
+
+                        default:
+                            System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                    }
+                }
+            }
+        }
+
+        if (!found) {
+            System.out.println(Ansi.RED + "Book ID not found." + Ansi.RESET);
+        }
+        System.out.println("==============================================");
     }
 
 

@@ -1,13 +1,14 @@
 package com.mycompany.library;
 
 import java.io.Serializable;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.UUID;
 import java.util.ArrayList;
 
 public class Book implements Serializable {
     private static final long serialVersionUID = 1L;
-
+    private static final SecureRandom random = new SecureRandom(); 
     private final String bookId;
     private String title;
     private String author;
@@ -17,16 +18,40 @@ public class Book implements Serializable {
     private ArrayList<BorrowDetails> borrowDetails;
 
     public Book(String title, String author, String yearPublished, String description) {
-        // Pad short inputs with '0' characters if they're less than 3 characters
-        String BookIDTitle = title.length() < 3 ? title + "000".substring(0, 3 - title.length()) : title;
+        //Pad short inputs with 'X' characters if they're less than 3 characters
+        String BookIDTitle = title.length() < 3 ? title + "XXX".substring(0, 3 - title.length()) : title;
         
-        this.bookId = "B" + BookIDTitle.replaceAll("\\s+", "").substring(0, 3).toUpperCase() + UUID.randomUUID().toString().substring(0, 4);
+        this.bookId = generateBookId(title);
         this.title = title;
         this.author = author;
         this.yearPublished = yearPublished;
         this.description = description;
         this.lastEdited = new Date();
         this.borrowDetails = new ArrayList<>();
+    }
+
+    private String generateBookId(String title) {
+        //Extract up to 3 letters from the title (ignore spaces)
+        String prefix = title.replaceAll("\\s+", "").toUpperCase();
+        if (prefix.length() < 3) prefix = String.format("%-3s", prefix).replace(' ', 'X');
+        else prefix = prefix.substring(0, 3);
+
+        //Generate a random 4-character alphanumeric string
+        String randomCode = generateRandomCode(5);
+
+        //Combine them into one ID (e.g., B-MET-39A15)
+        String id = "B-" + prefix + "-" + randomCode;
+
+        return id;
+    }
+
+    private String generateRandomCode(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     // Getters

@@ -35,8 +35,8 @@ public class Auth {
         //loops until a valid option in given
         while(true){
             System.out.println("\n=============" + Ansi.BOLD + " Library Management " + Ansi.RESET +"=============");
-            System.out.println(Ansi.PURPLE + "1:" + Ansi.RESET + " Returning user");
-            System.out.println(Ansi.PURPLE + "2:" + Ansi.RESET + " New user");   
+            System.out.println(Ansi.ORANGE + "1:" + Ansi.RESET + " Returning user");
+            System.out.println(Ansi.ORANGE + "2:" + Ansi.RESET + " New user");   
             System.out.println("==============================================");
             System.out.print("Enter: ");
             
@@ -65,13 +65,13 @@ public class Auth {
         
     public void login() {
         System.out.println("====================" + Ansi.BOLD + " Login " + Ansi.RESET +"===================");
-        System.out.println(Ansi.RED + "Enter -1 to exit" + Ansi.RESET);
+        System.out.println(Ansi.RED + "Enter 0 to exit" + Ansi.RESET);
         System.out.println("==============================================");
         while (true) {
             System.out.print("Enter your username: ");
             String username = scanner.next();
 
-            if (username.equals("-1")) { // go back to auth menu if -1 entered
+            if (username.equals("0")) { // go back to auth menu if 0 entered
                 authMenu();
                 break;
             }
@@ -79,7 +79,7 @@ public class Auth {
             System.out.print("Enter your password: ");
             String password = scanner.next();
 
-            if (password.equals("-1")) { // go back to auth menu if -1 entered
+            if (password.equals("0")) { // go back to auth menu if 0 entered
                 authMenu();
                 break;
             }
@@ -87,8 +87,8 @@ public class Auth {
             if (authenticate(username, password)) {
                 //if valid username and password
         System.out.println("==============================================\n");
-                System.out.println(Ansi.PURPLE + "Login successful!" + Ansi.RESET);
-                System.out.println(Ansi.PURPLE + "Hello, " + Ansi.BLUE + (String) getCurrentUser().getFullName() + Ansi.PURPLE + Ansi.RESET );
+                System.out.println(Ansi.ORANGE + "Login successful!" + Ansi.RESET);
+                System.out.println(Ansi.ORANGE + "Hello, " + (String) getCurrentUser().getFullName() + Ansi.RESET );
                 break;
             } else {
                 //if invalid username and password
@@ -132,7 +132,7 @@ public class Auth {
         
     public boolean registerAcc() {
         System.out.println("============" + Ansi.BOLD + " Register New Account " + Ansi.RESET + "============");
-        System.out.println(Ansi.RED + "Enter -1 at any time to cancel" + Ansi.RESET);
+        System.out.println(Ansi.RED + "Enter 0 at any time to cancel" + Ansi.RESET);
         System.out.println("==============================================");
 
         if (scanner.hasNextLine()) {
@@ -143,7 +143,7 @@ public class Auth {
             System.out.print("Enter your full name: ");
             String fullName = scanner.nextLine().trim();
 
-            if (fullName.equals("-1")) {
+            if (fullName.equals("0")) {
                 authMenu();
                 return false;
             }
@@ -158,7 +158,7 @@ public class Auth {
                 System.out.print("Enter your username: ");
                 username = scanner.nextLine().trim();
 
-                if (username.equals("-1")) {
+                if (username.equals("0")) {
                     authMenu();
                     return false;
                 }
@@ -190,7 +190,7 @@ public class Auth {
                 System.out.print("Enter your password (min 8 char): ");
                 password = scanner.nextLine().trim();
 
-                if (password.equals("-1")) {
+                if (password.equals("0")) {
                     authMenu();
                     return false;
                 }

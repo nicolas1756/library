@@ -16,21 +16,27 @@ import java.util.Date;
 public class BorrowDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String username;     // who borrowed the book
-    private String bookId;       // ID of the borrowed book
-    private Date dateBorrowed;   // when it was borrowed
-    private Date dueDate;        // when it’s due
-    private Date dateReturned;   // when it was returned (null if still borrowed)
-    private String status;       // "Borrowed", "Returned", "Overdue", etc.
+public enum BorrowStatus {
+    BORROWED,
+    RETURNED,
+    OVERDUE
+}
 
-    // Constructor
-    public BorrowDetails(String username, String bookId, Date dateBorrowed, Date dueDate, String status) {
+
+    private String username;
+    private String bookId;
+    private Date dateBorrowed;
+    private Date dueDate;
+    private Date dateReturned;
+    private BorrowStatus status;  
+
+    public BorrowDetails(String username, String bookId, Date dueDate) {
         this.username = username;
         this.bookId = bookId;
-        this.dateBorrowed = dateBorrowed;
+        this.dateBorrowed = new Date();  
         this.dueDate = dueDate;
-        this.dateReturned = null; 
-        this.status = status;
+        this.dateReturned = null;
+        this.status = BorrowStatus.BORROWED;  // Default status
     }
 
     // Getters
@@ -39,7 +45,7 @@ public class BorrowDetails implements Serializable {
     public Date getDateBorrowed() { return dateBorrowed; }
     public Date getDueDate() { return dueDate; }
     public Date getDateReturned() { return dateReturned; }
-    public String getStatus() { return status; }
+    public BorrowStatus getStatus() { return status; }
 
     // Setters
     public void setUsername(String username) { this.username = username; }
@@ -47,7 +53,7 @@ public class BorrowDetails implements Serializable {
     public void setDateBorrowed(Date dateBorrowed) { this.dateBorrowed = dateBorrowed; }
     public void setDueDate(Date dueDate) { this.dueDate = dueDate; }
     public void setDateReturned(Date dateReturned) { this.dateReturned = dateReturned; }
-    public void setStatus(String status) { this.status = status; }
+    public void setStatus(BorrowStatus status) { this.status = status; }
 
     public boolean isReturned() {
         return dateReturned != null;
