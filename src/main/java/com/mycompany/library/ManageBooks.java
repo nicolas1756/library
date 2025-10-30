@@ -78,9 +78,34 @@ public class ManageBooks {
 
         // Print bottom border
         System.out.println(bottom);
-        System.out.println("\nDescription (Press D + BookID to view full description)");
-        System.out.println("=========================================================");
     }
+
+    public void printLibrarianTable() {
+        ArrayList<Book> books = getAllBooks();
+        printTable(books, EnumSet.allOf(Column.class));
+
+        System.out.println("\nEnter a Book ID to view its description (or press Enter to skip)");
+        System.out.println("==============================================");
+
+        String input = scanner.nextLine().trim();
+
+        // If user just presses Enter, skip
+        if (input.isEmpty()) {
+            return;
+        }
+
+        // Look for a matching Book ID
+        for (Book book : books) {
+            if (book.getBookId().equalsIgnoreCase(input)) {
+                System.out.println("Description: " + book.getDescription());
+                return;
+            }
+        }
+
+        // If no match found
+        System.out.println("\u001B[31mBook ID not found.\u001B[0m");
+    }
+
 
     // Get all books
     public ArrayList<Book> getAllBooks() {
@@ -163,7 +188,6 @@ public class ManageBooks {
         fileHandling.writeToFile("books.ser", newBook, Book.class);
         System.out.println("==============================================");
         System.out.println(Ansi.PURPLE + newBook + " successfully added!" + Ansi.RESET);
-        printTable(getAllBooks(), EnumSet.allOf(Column.class));
     }
 
     // Remove a book by title
@@ -208,7 +232,7 @@ public class ManageBooks {
     // Helper method to format dates
     private static String formatDate(Date date) {
         if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MM/dd/yy HH:mm");
         return sdf.format(date);
     }
 }

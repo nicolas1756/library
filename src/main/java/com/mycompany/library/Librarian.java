@@ -3,7 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.library;
+import java.util.EnumSet;
 import java.util.Scanner;
+
+import com.mycompany.library.ManageBooks.Column;
 /**
  *
  * @author nic
@@ -23,7 +26,7 @@ public class Librarian extends User {
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
         System.out.println(Ansi.PURPLE + "1." + Ansi.RESET + " Manage Books");
-        System.out.println("   -> Add/remove/edit the collection of books.");
+        System.out.println("   -> Add/remove/edit/view the collection of books.");
         System.out.println(Ansi.PURPLE + "2." + Ansi.RESET + " View All Borrow Records");
         System.out.println("   -> View all borrowed books and their statuses.");
         System.out.println(Ansi.PURPLE + "3." + Ansi.RESET + " Logout");
@@ -64,7 +67,9 @@ public class Librarian extends User {
             System.out.println("   -> Removes a book from the library.");
             System.out.println(Ansi.PURPLE + "3." + Ansi.RESET + " Edit a Book");
             System.out.println("   -> Modifys an existing book.");
-            System.out.println(Ansi.PURPLE + "4." + Ansi.RESET + " Back");
+            System.out.println(Ansi.PURPLE + "4." + Ansi.RESET + " Print table");
+            System.out.println("   -> Displays the collection of books and metadata.");
+            System.out.println(Ansi.PURPLE + "5." + Ansi.RESET + " Back");
             System.out.println("   -> Goes back to main menu.");
             System.out.println("==============================================");
             System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -88,6 +93,11 @@ public class Librarian extends User {
                     break;
 
                 case "4":
+                    System.out.println(Ansi.PURPLE + "Printing table..." + Ansi.RESET);
+                    manageBooks.printLibrarianTable();
+                    break;
+
+                case "5":
                     untilExit = false;
                     System.out.println(Ansi.PURPLE + "Going back..." + Ansi.RESET);
                     auth.getCurrentUser().displayMainMenu(auth);
