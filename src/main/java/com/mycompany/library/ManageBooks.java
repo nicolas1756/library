@@ -1,74 +1,86 @@
 package com.mycompany.library;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Date;
+import java.util.EnumSet;
 
 public class ManageBooks {
 
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
 
-    public static void printTable(ArrayList<Book> books) {
+    // Define columns as an enum
+    public enum Column {
+        ID, TITLE, AUTHOR, YEAR, LAST_EDITED
+    }
+
+    public static void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
         if (books == null || books.isEmpty()) {
-            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            System.out.println("\u001B[31mNo books available.\u001B[0m"); // ANSI red
             return;
         }
 
-        // Calculate maximum widths based on content
-        int idWidth = Math.max("Book ID".length(), books.stream()
-                .mapToInt(b -> b.getBookId().length())
-                .max().orElse(0)) + 2;
+        // Column widths
+        final int idWidth = 12;
+        final int titleWidth = 25;
+        final int authorWidth = 15;
+        final int yearWidth = 6;
+        final int dateWidth = 25;
 
-        int titleWidth = Math.max("Title".length(), books.stream()
-                .mapToInt(b -> b.getTitle().length())
-                .max().orElse(0)) + 2;
+        // Prepare dynamic parts
+        StringBuilder top = new StringBuilder("╔");
+        StringBuilder header = new StringBuilder("║ ");
+        StringBuilder sep = new StringBuilder("╠");
+        StringBuilder bottom = new StringBuilder("╚");
 
-        int authorWidth = Math.max("Author".length(), books.stream()
-                .mapToInt(b -> b.getAuthor().length())
-                .max().orElse(0)) + 2;
+        // Helper lambda to add a column
+        java.util.function.BiConsumer<String[], Integer> addCol = (info, width) -> {
+            top.append("═".repeat(width)).append("╦");
+            header.append(String.format("%-" + (width - 1) + "s║ ", info[0]));
+            sep.append("═".repeat(width)).append("╬");
+            bottom.append("═".repeat(width)).append("╩");
+        };
 
-        int yearWidth = Math.max("Year".length(), books.stream()
-                .mapToInt(b -> b.getYearPublished().length())
-                .max().orElse(0)) + 2;
+        // Add selected columns
+        if (columns.contains(Column.ID)) addCol.accept(new String[]{"Book ID"}, idWidth);
+        if (columns.contains(Column.TITLE)) addCol.accept(new String[]{"Title"}, titleWidth);
+        if (columns.contains(Column.AUTHOR)) addCol.accept(new String[]{"Author"}, authorWidth);
+        if (columns.contains(Column.YEAR)) addCol.accept(new String[]{"Year"}, yearWidth);
+        if (columns.contains(Column.LAST_EDITED)) addCol.accept(new String[]{"Last Edited"}, dateWidth);
 
-        // Date format is fixed length: "yyyy-MM-dd HH:mm:ss"
-        int dateWidth = Math.max("Last Edited".length(), 19) + 2;
+        // Replace final borders properly
+        top.setCharAt(top.length() - 1, '╗');
+        sep.setCharAt(sep.length() - 1, '╣');
+        bottom.setCharAt(bottom.length() - 1, '╝');
 
-        // Top border
-        System.out.println("╔" + "═".repeat(idWidth) + "╦" + "═".repeat(titleWidth) + "╦" + 
-                          "═".repeat(authorWidth) + "╦" + "═".repeat(yearWidth) + "╦" + 
-                          "═".repeat(dateWidth) + "╗");
-        
-        // Headers
-        System.out.printf("║ %-" + (idWidth-1) + "s║ %-" + (titleWidth-1) + "s║ %-" + 
-                         (authorWidth-1) + "s║ %-" + (yearWidth-1) + "s║ %-" + (dateWidth-1) + "s║%n",
-                         "Book ID", "Title", "Author", "Year", "Last Edited");
+        // Print header section
+        System.out.println(top);
+        System.out.println(header);
+        System.out.println(sep);
 
-        // Header-content separator
-        System.out.println("╠" + "═".repeat(idWidth) + "╬" + "═".repeat(titleWidth) + "╬" + 
-                          "═".repeat(authorWidth) + "╬" + "═".repeat(yearWidth) + "╬" + 
-                          "═".repeat(dateWidth) + "╣");
-
-        // Content rows
+        // Print each row dynamically
         for (Book book : books) {
-            System.out.printf("║ %-" + (idWidth-1) + "s║ %-" + (titleWidth-1) + "s║ %-" + 
-                            (authorWidth-1) + "s║ %-" + (yearWidth-1) + "s║ %-" + (dateWidth-1) + "s║%n",
-                            book.getBookId(),
-                            truncateString(book.getTitle(), titleWidth-1),
-                            truncateString(book.getAuthor(), authorWidth-1),
-                            book.getYearPublished(),
-                            formatDate(book.getLastEdited()));
+            StringBuilder row = new StringBuilder("║ ");
+            if (columns.contains(Column.ID))
+                row.append(String.format("%-" + (idWidth - 1) + "s║ ", book.getBookId()));
+            if (columns.contains(Column.TITLE))
+                row.append(String.format("%-" + (titleWidth - 1) + "s║ ", truncateString(book.getTitle(), titleWidth - 1)));
+            if (columns.contains(Column.AUTHOR))
+                row.append(String.format("%-" + (authorWidth - 1) + "s║ ", truncateString(book.getAuthor(), authorWidth - 1)));
+            if (columns.contains(Column.YEAR))
+                row.append(String.format("%-" + (yearWidth - 1) + "s║ ", book.getYearPublished()));
+            if (columns.contains(Column.LAST_EDITED))
+                row.append(String.format("%-" + (dateWidth - 1) + "s║", formatDate(book.getLastEdited())));
+            System.out.println(row);
         }
 
-        // Bottom border
-        System.out.println("╚" + "═".repeat(idWidth) + "╩" + "═".repeat(titleWidth) + "╩" + 
-                          "═".repeat(authorWidth) + "╩" + "═".repeat(yearWidth) + "╩" + 
-                          "═".repeat(dateWidth) + "╝");
+        // Print bottom border
+        System.out.println(bottom);
         System.out.println("\nDescription (Press D + BookID to view full description)");
         System.out.println("=========================================================");
     }
-
 
     // Get all books
     public ArrayList<Book> getAllBooks() {
@@ -151,7 +163,7 @@ public class ManageBooks {
         fileHandling.writeToFile("books.ser", newBook, Book.class);
         System.out.println("==============================================");
         System.out.println(Ansi.PURPLE + newBook + " successfully added!" + Ansi.RESET);
-        printTable(getAllBooks());
+        printTable(getAllBooks(), EnumSet.allOf(Column.class));
     }
 
     // Remove a book by title
