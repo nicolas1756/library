@@ -17,7 +17,7 @@ public class ManageBooks {
 
     // Define columns as an enum
     public enum Column {
-        ID, TITLE, AUTHOR, YEAR, LAST_EDITED
+        INDEX, ID, TITLE, AUTHOR, YEAR, LAST_EDITED
     }
 
     public static void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
@@ -26,7 +26,7 @@ public class ManageBooks {
             return;
         }
 
-        boolean supportsUnicode = true;
+        boolean supportsUnicode = false;
  
         
         // Choose border characters based on support
@@ -42,6 +42,7 @@ public class ManageBooks {
         final String HLINE = supportsUnicode ? "═" : "-";
 
         // Column widths
+        final int indexWidth = 5;
         final int idWidth = 12;
         final int titleWidth = 25;
         final int authorWidth = 15;
@@ -63,6 +64,7 @@ public class ManageBooks {
         };
 
         // Add selected columns
+        if (columns.contains(Column.INDEX)) addCol.accept(new String[]{"Index"}, indexWidth);
         if (columns.contains(Column.ID)) addCol.accept(new String[]{"Book ID"}, idWidth);
         if (columns.contains(Column.TITLE)) addCol.accept(new String[]{"Title"}, titleWidth);
         if (columns.contains(Column.AUTHOR)) addCol.accept(new String[]{"Author"}, authorWidth);
@@ -79,9 +81,14 @@ public class ManageBooks {
         System.out.println(header);
         System.out.println(sep);
 
+        int x = 1;
         // Print each row dynamically
         for (Book book : books) {
             StringBuilder row = new StringBuilder(VSEP + " ");
+            
+            if (columns.contains(Column.INDEX))
+                row.append(String.format("%-" + (indexWidth - 1) + "s" + VSEP + " ", x++));
+
             if (columns.contains(Column.ID))
                 row.append(String.format("%-" + (idWidth - 1) + "s" + VSEP + " ", book.getBookId()));
             if (columns.contains(Column.TITLE))
@@ -252,7 +259,6 @@ public class ManageBooks {
                 found = true;
 
                 if (ConsoleUtils.confirmAction("Are you sure? this action cannot be undone.")) {
-                    System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
                     fileHandling.overrideFile("books.ser", books);
                     System.out.println(Ansi.ORANGE + "Book with ID " + bookID + " has been removed." + Ansi.RESET);
                 }

@@ -3,7 +3,8 @@ package com.mycompany.library;
 public class Ansi {
     // ANSI escape codes for softer colors
     final static String BOLD = "\033[1m";
-    final static String RED = "\u001B[38;5;208m";     
+    final static String RED = "\u001B[38;5;208m"; 
+    //final static String RED = "\u001B[38;2;255;50;50m";     
     final static String GREEN = "\033[32m";  
     final static String YELLOW = "\033[33m";
     final static String BLUE = "\033[34m";     
