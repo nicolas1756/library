@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.Map;
 
 public class ManageBooks {
 
@@ -22,14 +24,13 @@ public class ManageBooks {
 
     public static void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
         if (books == null || books.isEmpty()) {
-            System.out.println("\u001B[31mNo books available.\u001B[0m"); // ANSI red
+            System.out.println("\u001B[31mNo books available.\u001B[0m");
             return;
         }
 
-        boolean supportsUnicode = false;
- 
-        
-        // Choose border characters based on support
+        boolean supportsUnicode = detectUnicodeSupport();
+
+        // Borders
         final String TL = supportsUnicode ? "╔" : "+";
         final String TR = supportsUnicode ? "╗" : "+";
         final String BL = supportsUnicode ? "╚" : "+";
@@ -41,71 +42,79 @@ public class ManageBooks {
         final String CROSS = supportsUnicode ? "╬" : "+";
         final String HLINE = supportsUnicode ? "═" : "-";
 
-        // Column widths
-        final int indexWidth = 5;
-        final int idWidth = 12;
-        final int titleWidth = 25;
-        final int authorWidth = 15;
-        final int yearWidth = 6;
-        final int dateWidth = 17;
+        // Step 1: Determine column headers
+        Map<Column, String> headers = Map.of(
+            Column.INDEX, "Index",
+            Column.ID, "Book ID",
+            Column.TITLE, "Title",
+            Column.AUTHOR, "Author",
+            Column.YEAR, "Year",
+            Column.LAST_EDITED, "Last Edited"
+        );
 
-        // Prepare dynamic parts
+        // Step 2: Calculate max width for each column
+        Map<Column, Integer> colWidths = new HashMap<>();
+        for (Column col : columns) {
+            int max = headers.get(col).length();
+            for (Book book : books) {
+                String value = switch (col) {
+                    case INDEX -> String.valueOf(books.indexOf(book) + 1);
+                    case ID -> String.valueOf(book.getBookId());
+                    case TITLE -> book.getTitle();
+                    case AUTHOR -> book.getAuthor();
+                    case YEAR -> String.valueOf(book.getYearPublished());
+                    case LAST_EDITED -> formatDate(book.getLastEdited());
+                };
+                max = Math.max(max, value == null ? 0 : value.length());
+            }
+            colWidths.put(col, max + 2); // +2 padding
+        }
+
+        // Step 3: Build the borders and header dynamically
         StringBuilder top = new StringBuilder(TL);
         StringBuilder header = new StringBuilder(VSEP + " ");
         StringBuilder sep = new StringBuilder(HSEP);
         StringBuilder bottom = new StringBuilder(BL);
 
-        // Helper lambda to add a column
-        java.util.function.BiConsumer<String[], Integer> addCol = (info, width) -> {
+        for (Column col : columns) {
+            int width = colWidths.get(col);
             top.append(HLINE.repeat(width)).append(TSEP);
-            header.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", info[0]));
+            header.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", headers.get(col)));
             sep.append(HLINE.repeat(width)).append(CROSS);
             bottom.append(HLINE.repeat(width)).append(BSEP);
-        };
+        }
 
-        // Add selected columns
-        if (columns.contains(Column.INDEX)) addCol.accept(new String[]{"Index"}, indexWidth);
-        if (columns.contains(Column.ID)) addCol.accept(new String[]{"Book ID"}, idWidth);
-        if (columns.contains(Column.TITLE)) addCol.accept(new String[]{"Title"}, titleWidth);
-        if (columns.contains(Column.AUTHOR)) addCol.accept(new String[]{"Author"}, authorWidth);
-        if (columns.contains(Column.YEAR)) addCol.accept(new String[]{"Year"}, yearWidth);
-        if (columns.contains(Column.LAST_EDITED)) addCol.accept(new String[]{"Last Edited"}, dateWidth);
-
-        // Replace final borders properly
+        // Fix last border characters
         top.setCharAt(top.length() - 1, TR.charAt(0));
         sep.setCharAt(sep.length() - 1, HSEP.equals("+") ? '+' : '╣');
         bottom.setCharAt(bottom.length() - 1, BR.charAt(0));
 
-        // Print header section
+        // Step 4: Print header
         System.out.println(top);
         System.out.println(header);
         System.out.println(sep);
 
-        int x = 1;
-        // Print each row dynamically
+        // Step 5: Print rows
+        int i = 1;
         for (Book book : books) {
             StringBuilder row = new StringBuilder(VSEP + " ");
-            
-            if (columns.contains(Column.INDEX))
-                row.append(String.format("%-" + (indexWidth - 1) + "s" + VSEP + " ", x++));
-
-            if (columns.contains(Column.ID))
-                row.append(String.format("%-" + (idWidth - 1) + "s" + VSEP + " ", book.getBookId()));
-            if (columns.contains(Column.TITLE))
-                row.append(String.format("%-" + (titleWidth - 1) + "s" + VSEP + " ",
-                        truncateString(book.getTitle(), titleWidth - 1)));
-            if (columns.contains(Column.AUTHOR))
-                row.append(String.format("%-" + (authorWidth - 1) + "s" + VSEP + " ",
-                        truncateString(book.getAuthor(), authorWidth - 1)));
-            if (columns.contains(Column.YEAR))
-                row.append(String.format("%-" + (yearWidth - 1) + "s" + VSEP + " ", book.getYearPublished()));
-            if (columns.contains(Column.LAST_EDITED))
-                row.append(String.format("%-" + (dateWidth - 1) + "s" + VSEP,
-                        formatDate(book.getLastEdited())));
+            for (Column col : columns) {
+                int width = colWidths.get(col);
+                String value = switch (col) {
+                    case INDEX -> String.valueOf(i);
+                    case ID -> String.valueOf(book.getBookId());
+                    case TITLE -> book.getTitle();
+                    case AUTHOR -> book.getAuthor();
+                    case YEAR -> String.valueOf(book.getYearPublished());
+                    case LAST_EDITED -> formatDate(book.getLastEdited());
+                };
+                row.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", value == null ? "" : value));
+            }
             System.out.println(row);
+            i++;
         }
 
-        // Print bottom border
+        // Step 6: Print bottom border
         System.out.println(bottom);
     }
 
@@ -429,36 +438,18 @@ public class ManageBooks {
         return sdf.format(date);
     }
     
-    public static boolean supportsUnicode() {
-    // Check the reported file encoding
-    String encoding = System.getProperty("file.encoding", "").toLowerCase();
+    private static boolean detectUnicodeSupport() {
+    String os = System.getProperty("os.name").toLowerCase();
+    String term = System.getenv("TERM");
+    String conEmu = System.getenv("ConEmuANSI");
+    String wtSession = System.getenv("WT_SESSION");
 
-    // If it’s not UTF, we already know it's unsafe
-    if (!encoding.contains("utf")) {
-        return false;
-    }
-
-    // Try to print a test character and see if it's preserved
-    try {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream testOut = new PrintStream(baos, true, "UTF-8");
-
-        // Print a box character to our test stream
-        testOut.print("╔");
-        testOut.flush();
-
-        String result = baos.toString("UTF-8");
-
-        // If the character was replaced with '?' or missing, Unicode not supported visually
-        if (result.contains("?") || result.isBlank()) {
-            return false;
-        }
-
-        // Otherwise, likely supported
-        return true;
-    } catch (Exception e) {
-        return false; // fallback safe default
-    }
+    // Heuristics for terminals that usually support Unicode
+    return (wtSession != null) || // Windows Terminal
+           (conEmu != null && conEmu.equalsIgnoreCase("ON")) || // ConEmu
+           (term != null && (term.contains("xterm") || term.contains("ansi") || term.contains("vt100"))) ||
+           (!os.contains("win")); // Assume true for macOS/Linux
 }
+
 
 }
