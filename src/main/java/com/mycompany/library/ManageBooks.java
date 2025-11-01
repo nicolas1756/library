@@ -121,7 +121,10 @@ public class ManageBooks {
 
     public void printLibrarianTable(Boolean promptDes) {
         ArrayList<Book> books = getAllBooks();
-        printTable(books, EnumSet.allOf(Column.class));
+
+        //menu to select filters and add search query could be added here
+        ArrayList<Book> filteredbooks = searchFilterMenu(books);
+        printTable(filteredbooks, EnumSet.allOf(Column.class));
 
         if(promptDes){
             System.out.println("\nEnter a Book ID to view its description (or press Enter to skip)");
@@ -149,6 +152,87 @@ public class ManageBooks {
         
     }
 
+    public ArrayList<Book> searchFilterMenu(ArrayList<Book> books) {
+        ArrayList<Book> filteredBooks = new ArrayList<>(books);
+
+        while (true) {
+            System.out.println("\n================" + Ansi.BOLD + " Filter & Search " + Ansi.RESET +"================");
+            System.out.println("1. Show all books");
+            System.out.println("2. Search books");
+            System.out.println("3. Filter books");
+            System.out.println("4. Clear filters");
+            System.out.println("5. Exit menu and show table");
+            System.out.print("Select an option (1-5): ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    filteredBooks = new ArrayList<>(books);
+                    System.out.println("Showing all books.");
+                    break;
+
+                case "2":
+                    System.out.print("Enter search keyword (title/author/year): ");
+                    String keyword = scanner.nextLine().trim().toLowerCase();
+                    filteredBooks = new ArrayList<>();
+                    for (Book b : books) {
+                        if (b.getTitle().toLowerCase().contains(keyword)
+                                || b.getAuthor().toLowerCase().contains(keyword)
+                                || b.getYearPublished().toLowerCase().contains(keyword)) {
+                            filteredBooks.add(b);
+                        }
+                    }
+                    if (filteredBooks.isEmpty()) {
+                        System.out.println("\u001B[33mNo results found for: " + keyword + "\u001B[0m");
+                    } else {
+                        System.out.println(filteredBooks.size() + " result(s) found.");
+                    }
+                    break;
+
+                case "3":
+                    System.out.println("Filter by:");
+                    System.out.println("   1. Author");
+                    System.out.println("   2. Year Published");
+                    System.out.print("Choose filter type: ");
+                    String filterChoice = scanner.nextLine().trim();
+
+                    if (filterChoice.equals("1")) {
+                        System.out.print("Enter author name: ");
+                        String author = scanner.nextLine().trim().toLowerCase();
+                        filteredBooks.removeIf(b -> !b.getAuthor().toLowerCase().contains(author));
+                        System.out.println("Filtered by author.");
+                    } else if (filterChoice.equals("2")) {
+                        System.out.print("Enter year: ");
+                        String year = scanner.nextLine().trim();
+                        filteredBooks.removeIf(b -> !b.getYearPublished().equalsIgnoreCase(year));
+                        System.out.println("Filtered by year.");
+                    } else {
+                        System.out.println("\u001B[31mInvalid filter option.\u001B[0m");
+                    }
+                    break;
+
+                case "4":
+                    filteredBooks = new ArrayList<>(books);
+                    System.out.println("Filters cleared.");
+                    break;
+
+                case "5":
+                    // Exit the filter/search menu and return results
+                    return filteredBooks;
+
+                default:
+                    System.out.println("\u001B[31mInvalid choice.\u001B[0m");
+                    break;
+            }
+
+            // Optional: preview results each time
+            System.out.println("\nCurrent results: " + filteredBooks.size() + " book(s).");
+            // You can call your printTable(filteredBooks, EnumSet.allOf(Column.class)) here if you want live preview
+        }
+    }
+
+
 
     // Get all books
     public ArrayList<Book> getAllBooks() {
@@ -160,7 +244,8 @@ public class ManageBooks {
 
     // Add a new book
     public void addBook() {
-        String title = "", author = "", year = "", description = "";
+        String title = "", author = "", year = "", description = "", genreInput = "";
+        ArrayList<String> genres = new ArrayList<>();
         boolean inputComplete = false;
         int step = 0;
 
@@ -219,36 +304,44 @@ public class ManageBooks {
                         continue;
                     }
                     if (!description.isEmpty()) {
-                        inputComplete = true;
+                        step++;
                     } else {
                         System.out.println(Ansi.RED + "Description cannot be empty!" + Ansi.RESET);
                     }
                     break;
+                case 4: //genre
+                    while(true){
+                        System.out.print("Enter book genre (comma-separated for multiple): ");
+                        genreInput = scanner.nextLine().trim();
+                        if (genreInput.equals("0")) {
+                            step--;
+                            break;
+                        }
+                        if (!genreInput.isEmpty()) {
+                            String[] genreArray = genreInput.split(",");
+                            for(String g : genreArray){
+                                genres.add(g.trim());
+                            }
+                            inputComplete = true;
+                            break;
+                        } else {                            System.out.println(Ansi.RED + "Genre cannot be empty!" + Ansi.RESET);
+                        }
+                    }
             }
         }
 
-        Book newBook = new Book(title, author, year, description);
+        Book newBook = new Book(title, author, year, description, genres);
         fileHandling.appendToFile("books.ser", newBook, Book.class);
         System.out.println("==============================================");
         System.out.println(Ansi.ORANGE + newBook + " successfully added!" + Ansi.RESET);
     }
 
-    // Remove a book by title
+    // Remove a book by index 
     public void removeBook() {
         System.out.println("==============================================\n");
-        printLibrarianTable(false);
+        printLibrarianTable(false); // shows index column
         System.out.println("\n" + Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
-
-        System.out.print(Ansi.YELLOW + "Enter the Book ID to remove: " );
-        String bookID = scanner.nextLine().trim();
-        System.out.print(Ansi.RESET);
-
-        
-        if (bookID.equals("0")) {
-            return;
-        }
-
 
         ArrayList<Book> books = getAllBooks();
 
@@ -257,33 +350,45 @@ public class ManageBooks {
             return;
         }
 
-        // Find and remove book safely
-        boolean found = false;
-        Iterator<Book> iterator = books.iterator();
-        while (iterator.hasNext()) {
-            Book book = iterator.next();
-            if (book.getBookId().equalsIgnoreCase(bookID)) {
-                iterator.remove(); // safe removal during iteration
+        System.out.print(Ansi.YELLOW + "Enter the book index to remove: " + Ansi.RESET);
+        String input = scanner.nextLine().trim();
 
-                found = true;
-
-                if (ConsoleUtils.confirmAction("Are you sure? this action cannot be undone.")) {
-                    fileHandling.overrideFile("books.ser", books);
-                    System.out.println(Ansi.ORANGE + "Book with ID " + bookID + " has been removed." + Ansi.RESET);
-                }
-                else{
-                    System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
-                }
-
-                break;
-            }
+        if (input.equals("0")) {
+            System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+            return;
         }
 
-        if (!found) {
-            System.out.println(Ansi.RED + "Book ID not found." + Ansi.RESET);
+        // Validate numeric input
+        int index;
+        try {
+            index = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println(Ansi.RED + "Invalid input. Please enter a number." + Ansi.RESET);
+            return;
         }
+
+        // Convert to zero-based index
+        index -= 1;
+
+        if (index < 0 || index >= books.size()) {
+            System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+            return;
+        }
+
+        Book selectedBook = books.get(index);
+
+        System.out.println(Ansi.YELLOW + "Selected book: " + Ansi.RESET + selectedBook.getTitle() + " (" + selectedBook.getBookId() + ")");
+        if (ConsoleUtils.confirmAction("Are you sure? This action cannot be undone.")) {
+            books.remove(index);
+            fileHandling.overrideFile("books.ser", books);
+            System.out.println(Ansi.ORANGE + "Book \"" + selectedBook.getTitle() + "\" (ID: " + selectedBook.getBookId() + ") has been removed." + Ansi.RESET);
+        } else {
+            System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+        }
+
         System.out.println("==============================================");
     }
+
 
 
     // Edit a book's details
@@ -293,16 +398,6 @@ public class ManageBooks {
         System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
 
-        System.out.print(Ansi.YELLOW + "Enter the Book ID to edit: " );
-        String bookID = scanner.nextLine().trim();
-        System.out.print(Ansi.RESET);
-
-        
-        if (bookID.equals("0")) {
-            return;
-        }
-
-
         ArrayList<Book> books = getAllBooks();
 
         if (books == null || books.isEmpty()) {
@@ -310,97 +405,115 @@ public class ManageBooks {
             return;
         }
 
-        // Find and remove book safely
-        boolean found = false;
-        Iterator<Book> iterator = books.iterator();
-        while (iterator.hasNext()) {
-            Book book = iterator.next();
-            if (book.getBookId().equalsIgnoreCase(bookID)) {
-                System.out.println(Ansi.ORANGE + "Editing Book: " + book.getTitle() + Ansi.RESET);
-                found = true;
-                while (true) {
-                    System.out.println("==============================================");
-                    System.out.println("\nSelect field to edit:\n");
-                    
-                    System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Title");
-                    System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Author");
-                    System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Year Published");
-                    System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Description");
-                    System.out.println(Ansi.ORANGE + "5." + Ansi.RESET + " Save and Exit");
-                    System.out.println(Ansi.ORANGE + "6." + Ansi.RESET + " Back without saving");
+        System.out.print(Ansi.YELLOW + "Enter the book index to edit: " + Ansi.RESET);
+        String input = scanner.nextLine().trim();
 
-                    System.out.print(Ansi.YELLOW + "\nEnter choice: " + Ansi.RESET);
-                    
-                    String choice = scanner.nextLine().trim();
+        if (input.equals("0")) {
+            System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+            return;
+        }
 
-                    switch (choice) {
-                        case "1":
-                            System.out.print("Enter new title: ");
-                            String newTitle = scanner.nextLine().trim();
-                            if (!newTitle.isEmpty()) {
-                                book.setTitle(newTitle);
-                                System.out.println(Ansi.ORANGE + "Title updated." + Ansi.RESET);
-                            } else {
-                                System.out.println(Ansi.RED + "Title cannot be empty!" + Ansi.RESET);
-                            }
-                            break;
-                        case "2":
-                            System.out.print("Enter new author: ");
-                            String newAuthor = scanner.nextLine().trim();
-                            if (!newAuthor.isEmpty()) {
-                                book.setAuthor(newAuthor);
-                                System.out.println(Ansi.ORANGE + "Author updated." + Ansi.RESET);
-                            } else {
-                                System.out.println(Ansi.RED + "Author cannot be empty!" + Ansi.RESET);
-                            }
-                            break;
-                        case "3":
-                            System.out.print("Enter new year published: ");
-                            String newYear = scanner.nextLine().trim();
-                            if (!newYear.isEmpty()) {
-                                book.setYearPublished(newYear);
-                                System.out.println(Ansi.ORANGE + "Year Published updated." + Ansi.RESET);
-                            } else {
-                                System.out.println(Ansi.RED + "Year Published cannot be empty!" + Ansi.RESET);
-                            }
-                            break;
-                        case "4":
-                            System.out.print("Enter new description: ");
-                            String newDescription = scanner.nextLine().trim();
-                            if (!newDescription.isEmpty()) {
-                                book.setDescription(newDescription);
-                                System.out.println(Ansi.ORANGE + "Description updated." + Ansi.RESET);
-                            } else {
-                                System.out.println(Ansi.RED + "Description cannot be empty!" + Ansi.RESET);
-                            }
-                            break;
-                        case "5":
-                            fileHandling.overrideFile("books.ser", books);
-                            System.out.println(Ansi.ORANGE + "Changes saved." + Ansi.RESET);
-                            return;
-                        case "6":
-                        case "0":
-                            if (ConsoleUtils.confirmAction("Are you sure you want to exit?")) {
-                                System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
-                                return;
-                            }
-                            else{
-                                System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
-                                break;
-                            }
+        // Validate numeric input
+        int index;
+        try {
+            index = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println(Ansi.RED + "Invalid input. Please enter a number." + Ansi.RESET);
+            return;
+        }
 
-                        default:
-                            System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+        // Convert to zero-based index
+        index -= 1;
+
+        if (index < 0 || index >= books.size()) {
+            System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+            return;
+        }
+
+        Book book = books.get(index);
+
+        System.out.println(Ansi.ORANGE + "Editing Book: " + book.getTitle() + " (ID: " + book.getBookId() + ")" + Ansi.RESET);
+
+        while (true) {
+            System.out.println("==============================================");
+            System.out.println("\nSelect field to edit:\n");
+
+            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Title");
+            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Author");
+            System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Year Published");
+            System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Description");
+            System.out.println(Ansi.ORANGE + "5." + Ansi.RESET + " Save and Exit");
+            System.out.println(Ansi.ORANGE + "6." + Ansi.RESET + " Back without saving");
+
+            System.out.print(Ansi.YELLOW + "\nEnter choice: " + Ansi.RESET);
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter new title: ");
+                    String newTitle = scanner.nextLine().trim();
+                    if (!newTitle.isEmpty()) {
+                        book.setTitle(newTitle);
+                        System.out.println(Ansi.ORANGE + "Title updated." + Ansi.RESET);
+                    } else {
+                        System.out.println(Ansi.RED + "Title cannot be empty!" + Ansi.RESET);
                     }
-                }
+                    break;
+
+                case "2":
+                    System.out.print("Enter new author: ");
+                    String newAuthor = scanner.nextLine().trim();
+                    if (!newAuthor.isEmpty()) {
+                        book.setAuthor(newAuthor);
+                        System.out.println(Ansi.ORANGE + "Author updated." + Ansi.RESET);
+                    } else {
+                        System.out.println(Ansi.RED + "Author cannot be empty!" + Ansi.RESET);
+                    }
+                    break;
+
+                case "3":
+                    System.out.print("Enter new year published: ");
+                    String newYear = scanner.nextLine().trim();
+                    if (!newYear.isEmpty()) {
+                        book.setYearPublished(newYear);
+                        System.out.println(Ansi.ORANGE + "Year Published updated." + Ansi.RESET);
+                    } else {
+                        System.out.println(Ansi.RED + "Year Published cannot be empty!" + Ansi.RESET);
+                    }
+                    break;
+
+                case "4":
+                    System.out.print("Enter new description: ");
+                    String newDescription = scanner.nextLine().trim();
+                    if (!newDescription.isEmpty()) {
+                        book.setDescription(newDescription);
+                        System.out.println(Ansi.ORANGE + "Description updated." + Ansi.RESET);
+                    } else {
+                        System.out.println(Ansi.RED + "Description cannot be empty!" + Ansi.RESET);
+                    }
+                    break;
+
+                case "5":
+                    fileHandling.overrideFile("books.ser", books);
+                    System.out.println(Ansi.ORANGE + "Changes saved for \"" + book.getTitle() + "\"." + Ansi.RESET);
+                    return;
+
+                case "6":
+                case "0":
+                    if (ConsoleUtils.confirmAction("Are you sure you want to exit without saving?")) {
+                        System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
+                        return;
+                    } else {
+                        System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                    }
+                    break;
+
+                default:
+                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
             }
         }
-
-        if (!found) {
-            System.out.println(Ansi.RED + "Book ID not found." + Ansi.RESET);
-        }
-        System.out.println("==============================================");
     }
+
 
 
 

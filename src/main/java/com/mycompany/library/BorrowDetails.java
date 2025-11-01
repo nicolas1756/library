@@ -67,7 +67,8 @@ public enum BorrowStatus {
                 ", dateBorrowed=" + dateBorrowed +
                 ", dueDate=" + dueDate +
                 ", dateReturned=" + (dateReturned != null ? dateReturned : "Not returned") +
+                ""+
                 ", status='" + status + '\'' +
-                '}';
+                '}' + "\n";
     }
 }

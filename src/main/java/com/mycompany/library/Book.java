@@ -2,6 +2,7 @@ package com.mycompany.library;
 
 import java.io.Serializable;
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 import java.util.ArrayList;
@@ -15,9 +16,10 @@ public class Book implements Serializable {
     private String yearPublished;
     private String description;
     private Date lastEdited;
+    private ArrayList<String> genre;
     private ArrayList<BorrowDetails> borrowDetails;
 
-    public Book(String title, String author, String yearPublished, String description) {
+    public Book(String title, String author, String yearPublished, String description, ArrayList<String> genre) {
         //Pad short inputs with 'X' characters if they're less than 3 characters
         String BookIDTitle = title.length() < 3 ? title + "XXX".substring(0, 3 - title.length()) : title;
         
@@ -27,6 +29,7 @@ public class Book implements Serializable {
         this.yearPublished = yearPublished;
         this.description = description;
         this.lastEdited = new Date();
+        this.genre = genre;
         this.borrowDetails = new ArrayList<>();
     }
 
@@ -60,6 +63,7 @@ public class Book implements Serializable {
     public String getAuthor() { return author; }
     public String getYearPublished() { return yearPublished; }
     public String getDescription() { return description; }
+    public ArrayList<String> getGenre() { return genre; }
     public Date getLastEdited() { return lastEdited; }
     public ArrayList<BorrowDetails> getBorrowDetails() { return borrowDetails; }
 
@@ -84,6 +88,11 @@ public class Book implements Serializable {
         updateLastEdited();
     }
 
+    public void setGenre(ArrayList<String> genre) { 
+        this.genre = genre; 
+        updateLastEdited();
+    }
+
     public void setBorrowDetails(ArrayList<BorrowDetails> borrowDetails) { 
         this.borrowDetails = borrowDetails; 
         updateLastEdited();
@@ -98,18 +107,26 @@ public class Book implements Serializable {
         this.borrowDetails.add(record);
         updateLastEdited();
     }
-
+    
     @Override
     public String toString() {
-        return "Book{" +
-                "bookId='" + bookId + '\'' +
-                ", title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", yearPublished='" + yearPublished + '\'' +
-                ", description='" + description + '\'' +
-                ", lastEdited=" + lastEdited +
-                ", borrowDetails=" + borrowDetails +
-                '}';
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String genreList = (genre != null && !genre.isEmpty())
+                ? String.join(", ", genre)
+                : "N/A";
+
+        return "\n==============================================" +
+               "\n Book Information" +
+               "\n==============================================" +
+               "\n ID            : " + bookId +
+               "\n Title         : " + title +
+               "\n Author        : " + author +
+               "\n Year Published: " + yearPublished +
+               "\n Genres        : " + genreList +
+               "\n Description   : " + description +
+               "\n Last Edited   : " + (lastEdited != null ? sdf.format(lastEdited) : "N/A") +
+               "\n Borrow Records: " + (borrowDetails != null ? borrowDetails.size() : 0) +
+               "\n==============================================";
     }
 
 }
