@@ -15,6 +15,9 @@ public class Library {
 
 
         //file read/write test
+        ManageBooks manageBooks = new ManageBooks();
+        manageBooks.loadBooks();
+        
         FileHandling fileHandling = new FileHandling();
         Auth auth = new Auth();
         Scanner scanner = new Scanner(System.in);

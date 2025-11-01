@@ -64,6 +64,7 @@ public class Book implements Serializable {
     public String getYearPublished() { return yearPublished; }
     public String getDescription() { return description; }
     public ArrayList<String> getGenre() { return genre; }
+    public String getStringGenre() { return genre.toString(); }
     public Date getLastEdited() { return lastEdited; }
     public ArrayList<BorrowDetails> getBorrowDetails() { return borrowDetails; }
 
