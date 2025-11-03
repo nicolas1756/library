@@ -22,9 +22,9 @@ public class Reader extends User {
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
         System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Browse all books");
-        System.out.println("   -> View the library's collection of books.");
+        System.out.println("   -> View and borrow from the library's collection of books.");
         System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Manage Borrowed Books");
-        System.out.println("   -> View, renew, or return your borrowed books.");
+        System.out.println("   -> View or renew your borrowed books.");
         System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " My Favorites");
         System.out.println("   -> View your list of favorited books.");
         System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Logout");
@@ -38,7 +38,7 @@ public class Reader extends User {
         switch (input) {
             case "1":
                 System.out.println(Ansi.ORANGE + "Loading the library's collection..." + Ansi.RESET);
-                displayManageBooksMenu(auth, scanner, manageBooks);
+                manageBooks.printReaderTable(true);
                 break;
 
             case "2":

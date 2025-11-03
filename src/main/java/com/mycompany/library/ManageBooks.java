@@ -29,8 +29,8 @@ public class ManageBooks {
             return;
         }
 
-        boolean supportsUnicode = detectUnicodeSupport();
-
+        //boolean supportsUnicode = detectUnicodeSupport();
+        boolean supportsUnicode = true;
         // Borders
         final String TL = supportsUnicode ? "╔" : "+";
         final String TR = supportsUnicode ? "╗" : "+";
@@ -122,50 +122,178 @@ public class ManageBooks {
         System.out.println(bottom);
     }
 
-
     public void printLibrarianTable(Boolean promptDes) {
         ArrayList<Book> books = getAllBooks();
 
         //menu to select filters and add search query could be added here
-        ArrayList<Book> filteredbooks = searchFilterMenu(books);
-        printTable(filteredbooks, EnumSet.allOf(Column.class));
+        ArrayList<Book> filteredBooks = searchFilterMenu(books);
 
-        if(promptDes){
-            System.out.println("\nEnter a Book ID to view its description (or press Enter to skip)");
-            System.out.println("==============================================");
+        while (true) {
+            printTable(filteredBooks, EnumSet.of(Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED));
 
-            String input = scanner.nextLine().trim();
+            if (promptDes) {
+                System.out.println("\nEnter a Book index to view its description (or press Enter to skip)");
+                System.out.println("==============================================");
 
-            // If user just presses Enter, skip
-            if (input.isEmpty()) {
-                return;
-            }
+                String input = scanner.nextLine().trim(); // <-- read entire line safely
 
-            // Look for a matching Book ID
-            for (Book book : books) {
-                if (book.getBookId().equalsIgnoreCase(input)) {
-                    System.out.println("Description: " + book.getDescription());
-                    return;
+                // if user presses Enter -> skip
+                if (input.isEmpty()) {
+                    break; // or return; depending on your flow
                 }
+
+                // check if numeric
+                if (!input.matches("\\d+")) {
+                    System.out.println(Ansi.RED + "Invalid input. Please enter a number from the table or press Enter to skip." + Ansi.RESET);
+                    continue;
+                }
+
+                int index = Integer.parseInt(input) - 1;
+
+                if (index < 0 || index >= filteredBooks.size()) {
+                    System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+                    continue;
+                }
+
+                Book selectedBook = filteredBooks.get(index);
+
+                System.out.println("Title: " + selectedBook.getTitle());
+                System.out.println("Description: " + selectedBook.getDescription());
+                System.out.println("==============================================");
+                System.out.println("Press Enter to continue...");
+                scanner.nextLine(); // wait for Enter
             }
 
-            // If no match found
-            System.out.println("\u001B[31mBook ID not found.\u001B[0m");
+            break; // exit the while loop
         }
 
         
     }
 
-    public ArrayList<Book> searchFilterMenu(ArrayList<Book> books) {
-        ArrayList<Book> filteredBooks = new ArrayList<>(books);
+    public void printReaderTable(Boolean promptSelect) {
+        ArrayList<Book> books = getAllBooks();
+
+        //menu to select filters and add search query could be added here
+        ArrayList<Book> filteredBooks = searchFilterMenu(books);
 
         while (true) {
-            System.out.println("\n================" + Ansi.BOLD + " Filter & Search " + Ansi.RESET +"================");
-            System.out.println("1. Clear filters");
-            System.out.println("2. Search books");
-            System.out.println("3. Filter books");
-            System.out.println("4. Exit and show table");
-            System.out.print("Select an option (1-4): ");
+            printTable(filteredBooks, EnumSet.of(Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED));
+
+            if (promptSelect) {
+                System.out.println("\nEnter a Book index to select it to borrow or favourite. (or press Enter to skip)");
+                System.out.println("==============================================");
+
+                String input = scanner.nextLine().trim(); // <-- read entire line safely
+
+                // if user presses Enter -> skip
+                if (input.isEmpty()) {
+                    break; // or return; depending on your flow
+                }
+
+                // check if numeric
+                if (!input.matches("\\d+")) {
+                    System.out.println(Ansi.RED + "Invalid input. Please enter a number from the table or press Enter to skip." + Ansi.RESET);
+                    continue;
+                }
+
+                int index = Integer.parseInt(input) - 1;
+
+                if (index < 0 || index >= filteredBooks.size()) {
+                    System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+                    continue;
+                }
+
+                Book selectedBook = filteredBooks.get(index);
+
+                selectBookReader(selectedBook);
+
+            }
+
+            break; // exit the while loop
+        }
+
+        
+    }
+
+    public void selectBookReader(Book selectedBook) {
+        boolean untilExit = true;
+        while (untilExit) {
+            System.out.println("\nSelected: " + selectedBook.getTitle() + "\n" );
+            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
+            System.out.println("   -> Adds a new book to the library.");
+            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Add to Favorites");
+            System.out.println("   -> Removes a book from the library.");
+            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back");
+            System.out.println("   -> Goes back to main menu.");
+            System.out.println("==============================================\n");
+            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+
+            String input = scanner.next();
+
+            switch (input) {
+                case "1":
+                    System.out.println(Ansi.ORANGE + "Add a book..." + Ansi.RESET + "\n");
+                    break;
+
+                case "2":
+                    System.out.println(Ansi.ORANGE + "Remove a book..." + Ansi.RESET + "\n");
+                    break;
+
+
+                case "0":
+                    untilExit = false;
+                    System.out.println(Ansi.ORANGE + "Going back..." + Ansi.RESET + "\n");
+                    printReaderTable(true);
+                    break;
+
+                default:
+                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+            }
+        
+        }
+
+    }
+    
+
+
+    public ArrayList<Book> searchFilterMenu(ArrayList<Book> books) {
+        ArrayList<Book> filteredBooks = new ArrayList<>(books);
+        String searchQuery = "";
+        HashMap<String, String> activeFilters = new HashMap<>();
+        while (true) {
+            System.out.println("============== Filter & Search ===============");
+
+            // Optional: preview results each time
+            System.out.println("\nCurrent results: " + filteredBooks.size() + " book(s).\n");
+            // You can call your printTable(filteredBooks, EnumSet.allOf(Column.class)) here if you want live preview
+
+            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Clear filters");
+            System.out.println("   -> Clear all active filters and search queries.");
+
+            System.out.print(Ansi.ORANGE + "2." + Ansi.RESET + " Search books");
+            if (!searchQuery.isEmpty()) {
+                System.out.print(Ansi.BLUE + " (Searching: " + searchQuery + ")" + Ansi.RESET);
+            }
+            System.out.println("\n   -> Find by title, author, or year.");
+
+            System.out.print(Ansi.ORANGE + "3." + Ansi.RESET + " Filter books");
+            if (!activeFilters.isEmpty()) {
+                if(activeFilters.containsKey("Author")){
+                    System.out.print(Ansi.BLUE + " (Author: " + activeFilters.get("Author") + ")" + Ansi.RESET);
+                }
+                if(activeFilters.containsKey("Year")){
+                    System.out.print(Ansi.BLUE + " (Year: " + activeFilters.get("Year") + ")" + Ansi.RESET);
+                }
+                if(activeFilters.containsKey("Genre")){
+                    System.out.print(Ansi.BLUE + " (Genre: " + activeFilters.get("Genre") + ")" + Ansi.RESET);
+                }
+                
+            }
+            System.out.println("\n   -> Narrow results by author, year, or genre.\n");
+
+            
+
+            System.out.print("Select an option (1-3) or" + Ansi.ORANGE + " press Enter to display table" + Ansi.RESET + ": ");
 
             String choice = scanner.nextLine().trim();
 
@@ -176,81 +304,144 @@ public class ManageBooks {
                     break;
 
                 case "2":
-                    System.out.print("Enter search keyword (title/author/year): ");
-                    String keyword = scanner.nextLine().trim().toLowerCase();
+                    System.out.print("\nEnter search keyword (title/author/year): ");
+                    searchQuery = scanner.nextLine().trim().toLowerCase();
                     filteredBooks = new ArrayList<>();
                     for (Book b : books) {
-                        if (b.getTitle().toLowerCase().contains(keyword)
-                                || b.getAuthor().toLowerCase().contains(keyword)
-                                || b.getYearPublished().toLowerCase().contains(keyword)) {
+                        if (b.getTitle().toLowerCase().contains(searchQuery)
+                                || b.getAuthor().toLowerCase().contains(searchQuery)
+                                || b.getYearPublished().toLowerCase().contains(searchQuery)) {
                             filteredBooks.add(b);
                         }
                     }
                     if (filteredBooks.isEmpty()) {
-                        System.out.println("\u001B[33mNo results found for: " + keyword + "\u001B[0m");
+                        System.out.println("\u001B[33mNo results found for: " + searchQuery + "\u001B[0m");
                     } else {
                         System.out.println(filteredBooks.size() + " result(s) found.");
                     }
                     break;
 
                 case "3":
-                    System.out.println("Filter by:");
-                    System.out.println("   1. Author");
-                    System.out.println("   2. Year Published");
-                    System.out.println("   3. Genre");
-                    System.out.print("Choose filter type: ");
-                    String filterChoice = scanner.nextLine().trim();
+                System.out.println("\nFilter by:");
+                System.out.println(Ansi.ORANGE + "1. " + Ansi.RESET + "Author");
+                System.out.println(Ansi.ORANGE + "2. " + Ansi.RESET + "Year Published");
+                System.out.println(Ansi.ORANGE + "3. " + Ansi.RESET + "Genre");
+                System.out.print("Choose filter type: ");
+                String filterChoice = scanner.nextLine().trim();
 
-                    if (filterChoice.equals("1")) {
-                        System.out.print("Enter author name: ");
-                        String author = scanner.nextLine().trim().toLowerCase();
-                        filteredBooks.removeIf(b -> !b.getAuthor().toLowerCase().contains(author));
+                if (filterChoice.equals("1")) {
+                    System.out.print(Ansi.YELLOW + "Enter author name (leave empty to clear author filter): " + Ansi.RESET);
+                    String author = scanner.nextLine().trim();
+
+                    if (author.isEmpty()) {
+                        activeFilters.remove("Author");
+                        System.out.println("Author filter cleared.");
+                    } else {
+                        activeFilters.put("Author", author.toLowerCase());
                         System.out.println("Filtered by author.");
-                    } else if (filterChoice.equals("2")) {
-                        System.out.print("Enter year: ");
-                        String year = scanner.nextLine().trim();
-                        filteredBooks.removeIf(b -> !b.getYearPublished().equalsIgnoreCase(year));
-                        System.out.println("Filtered by year.");
+                    }
 
-                    } else if (filterChoice.equals("3")) {
-                        System.out.print("Enter genre: ");
-                        String genre = scanner.nextLine().trim();
-                        
-                        Iterator<Book> book = filteredBooks.iterator(); //iterate through books
+                } else if (filterChoice.equals("2")) {
+                    System.out.println("\nSelect year filter type:");
+                    System.out.println(Ansi.ORANGE + "1. " + Ansi.RESET + "Before year");
+                    System.out.println(Ansi.ORANGE + "2. " + Ansi.RESET + "After year");
+                    System.out.println(Ansi.ORANGE + "3. " + Ansi.RESET + "Exact year");
+                    
+                    System.out.print(Ansi.YELLOW + "Select option (1-3, leave empty to clear year filter): " + Ansi.RESET );
+                    String selection = scanner.nextLine().trim();
 
-                        while (book.hasNext()) {
-                            Iterator<String> storedGenre = book.next().getGenre().iterator(); //get genre of each book
-                            
-                            boolean foundGenre = false; //boolean check if genre matched filter
+                    if (selection.isEmpty()) {
+                        activeFilters.remove("Year");
+                        System.out.println("Year filter cleared.");
+                    } else {
+                        System.out.print("Enter year (leave empty to clear): ");
+                        String yearInput = scanner.nextLine().trim();
 
-                            while(storedGenre.hasNext()){
-                                if (storedGenre.next().toLowerCase().contains(genre.toLowerCase())){foundGenre = true; break;} //if genre matches update foundGenre and break
-                            }
-
-                            if(!foundGenre){ //after completly looping through book's genre if still not found remove from filtered books
-                               book.remove();
+                        if (yearInput.isEmpty()) {
+                            activeFilters.remove("Year");
+                            System.out.println("Year filter cleared.");
+                        } else if (!yearInput.matches("\\d{4}")) {
+                            System.out.println("Invalid year format. Please enter a 4-digit year.");
+                        } else {
+                            int year = Integer.parseInt(yearInput);
+                            switch (selection) {
+                                case "1" -> activeFilters.put("Year", "Before " + year);
+                                case "2" -> activeFilters.put("Year", "After " + year);
+                                case "3" -> activeFilters.put("Year", "Exactly " + year);
+                                default -> System.out.println("Invalid option. Year filter canceled.");
                             }
                         }
-                        System.out.println("Filtered by year.");
-
-                    } else {
-                        System.out.println("\u001B[31mInvalid filter option.\u001B[0m");
                     }
+
+                } else if (filterChoice.equals("3")) {
+                    System.out.print(Ansi.YELLOW + "Enter genre (leave empty to clear genre filter): " + Ansi.RESET);
+                    String genre = scanner.nextLine().trim();
+
+                    if (genre.isEmpty()) {
+                        activeFilters.remove("Genre");
+                        System.out.println("Genre filter cleared.");
+                    } else {
+                        activeFilters.put("Genre", genre.toLowerCase());
+                        System.out.println("Filtered by genre.");
+                    }
+
+                } else {
+                    System.out.println("\u001B[31mInvalid filter option.\u001B[0m");
                     break;
+                }
 
+                // === Reapply all active filters ===
+                filteredBooks = new ArrayList<>(books); // reset to full list first
 
-                case "4":
+                for (Map.Entry<String, String> entry : activeFilters.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+
+                    switch (key) {
+                        case "Author" -> filteredBooks.removeIf(b -> !b.getAuthor().toLowerCase().contains(value));
+                        case "Year" -> {
+                            String[] parts = value.split(" ");
+                            try {
+                                int year = Integer.parseInt(parts[parts.length - 1]);
+                                if (value.startsWith("Before"))
+                                    filteredBooks.removeIf(b -> Integer.parseInt(b.getYearPublished()) >= year);
+                                else if (value.startsWith("After"))
+                                    filteredBooks.removeIf(b -> Integer.parseInt(b.getYearPublished()) <= year);
+                                else if (value.startsWith("Exactly"))
+                                    filteredBooks.removeIf(b -> !b.getYearPublished().equals(String.valueOf(year)));
+                            } catch (Exception e) {
+                                filteredBooks.removeIf(b -> true); // skip if invalid
+                            }
+                        }
+                        case "Genre" -> {
+                            Iterator<Book> bookIt = filteredBooks.iterator();
+                            while (bookIt.hasNext()) {
+                                Book book = bookIt.next();
+                                boolean found = false;
+                                for (String g : book.getGenre()) {
+                                    if (g.toLowerCase().contains(value)) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) bookIt.remove();
+                            }
+                        }
+                    }
+                }
+
+                break;
+
+                case "":
                     // Exit the filter/search menu and return results
                     return filteredBooks;
 
                 default:
                     System.out.println("\u001B[31mInvalid choice.\u001B[0m");
-                    break;
+                    continue;
             }
 
-            // Optional: preview results each time
-            System.out.println("\nCurrent results: " + filteredBooks.size() + " book(s).");
-            // You can call your printTable(filteredBooks, EnumSet.allOf(Column.class)) here if you want live preview
+
         }
     }
 
@@ -411,11 +602,8 @@ public class ManageBooks {
         System.out.println("==============================================");
     }
 
-
-
     // Edit a book's details
     public void editBook() {
-        System.out.println("==============================================");
         printLibrarianTable(false);
         System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
@@ -539,25 +727,6 @@ public class ManageBooks {
 
 
 
-    //General book methods
-
-    // Search for a book by title
-    public Book searchBook(String title) {
-
-        return null; 
-    }
-
-    // Filter books by author
-    public ArrayList<Book> filterBooksByAuthor(String author) {
-        // Method implementation here
-        return null; // Placeholder return
-    }
-
-    // Filter books by year
-    public ArrayList<Book> filterBooksByYear(int year) {
-        // Method implementation here
-        return null; // Placeholder return
-    }
 
     // Helper method to truncate long strings
     private static String truncateString(String str, int length) {
@@ -569,7 +738,7 @@ public class ManageBooks {
     // Helper method to format dates
     private static String formatDate(Date date) {
         if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MM/dd/yy HH:mm");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MM/dd/yy");
         return sdf.format(date);
     }
     
@@ -584,9 +753,7 @@ public class ManageBooks {
            (conEmu != null && conEmu.equalsIgnoreCase("ON")) || // ConEmu
            (term != null && (term.contains("xterm") || term.contains("ansi") || term.contains("vt100"))) ||
            (!os.contains("win")); // Assume true for macOS/Linux
-}
-
-
+    }
 
     public void loadBooks(){
         ArrayList<Book> books = new ArrayList<>();
@@ -637,10 +804,10 @@ public class ManageBooks {
 
         books.add(new Book("The Shadow of the Wind", "Carlos Ruiz Zafón", "2001", "A boy discovers a mysterious book that changes his life.", new ArrayList<>(List.of("Mystery", "Historical Fiction"))));
         books.add(new Book("The Night Circus", "Erin Morgenstern", "2011", "Two magicians compete in a mysterious, magical circus.", new ArrayList<>(List.of("Fantasy", "Romance"))));
-        books.add(new Book("The Handmaid’s Tale", "Margaret Atwood", "1985", "A woman struggles under a totalitarian theocracy that enslaves women.", new ArrayList<>(List.of("Dystopian", "Feminist Fiction"))));
+        books.add(new Book("The Handmaid's Tale", "Margaret Atwood", "1985", "A woman struggles under a totalitarian theocracy that enslaves women.", new ArrayList<>(List.of("Dystopian", "Feminist Fiction"))));
         books.add(new Book("Never Let Me Go", "Kazuo Ishiguro", "2005", "Students at a boarding school slowly learn their dark purpose.", new ArrayList<>(List.of("Science Fiction", "Drama"))));
         books.add(new Book("Cloud Atlas", "David Mitchell", "2004", "Interconnected stories span centuries exploring power and rebirth.", new ArrayList<>(List.of("Science Fiction", "Philosophical"))));
-        books.add(new Book("The Goldfinch", "Donna Tartt", "2013", "A boy’s life is shaped by a tragic museum bombing.", new ArrayList<>(List.of("Drama", "Mystery"))));
+        books.add(new Book("The Goldfinch", "Donna Tartt", "2013", "A boy's life is shaped by a tragic museum bombing.", new ArrayList<>(List.of("Drama", "Mystery"))));
         books.add(new Book("A Man Called Ove", "Fredrik Backman", "2012", "A grumpy old man finds purpose through unlikely friendships.", new ArrayList<>(List.of("Drama", "Humor"))));
         books.add(new Book("Educated", "Tara Westover", "2018", "A woman raised off-the-grid pursues education and self-discovery.", new ArrayList<>(List.of("Memoir", "Inspirational"))));
         books.add(new Book("The Midnight Library", "Matt Haig", "2020", "A woman explores alternate versions of her life through a magical library.", new ArrayList<>(List.of("Fantasy", "Philosophical"))));
@@ -707,3 +874,4 @@ public class ManageBooks {
 
 
 }
+

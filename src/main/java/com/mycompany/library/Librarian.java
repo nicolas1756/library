@@ -27,9 +27,9 @@ public class Librarian extends User {
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
         System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Manage Books");
         System.out.println("   -> Add/remove/edit/view the collection of books.");
-        System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " View All Borrow Records");
-        System.out.println("   -> View all borrowed books and their statuses.");
-        System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Logout");
+        System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Manage Borrow Records");
+        System.out.println("   -> View record of borrowed books and manage book returning.");
+        System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Logout");
         System.out.println("   -> Exit your account.");
         System.out.println("==============================================\n");
         System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -40,14 +40,14 @@ public class Librarian extends User {
         switch (input) {
             case "1":
                 System.out.println(Ansi.ORANGE + "Fetching books..." + Ansi.RESET);
-                displayManageBooksMenu(auth, scanner, manageBooks);
+                
                 break;
 
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching borrow records..." + Ansi.RESET);
                 break;
 
-            case "3":
+            case "0":
                 System.out.println(Ansi.RED + "Logging out..." + Ansi.RESET);
                 auth.logout();
                 break;
@@ -69,7 +69,7 @@ public class Librarian extends User {
             System.out.println("   -> Modifies an existing book.");
             System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Print Table");
             System.out.println("   -> Displays the collection of books and metadata.");
-            System.out.println(Ansi.ORANGE + "5." + Ansi.RESET + " Back");
+            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back");
             System.out.println("   -> Goes back to main menu.");
             System.out.println("==============================================\n");
             System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -97,7 +97,7 @@ public class Librarian extends User {
                     manageBooks.printLibrarianTable(true);
                     break;
 
-                case "5":
+                case "0":
                     untilExit = false;
                     System.out.println(Ansi.ORANGE + "Going back..." + Ansi.RESET + "\n");
                     auth.getCurrentUser().displayMainMenu(auth);
