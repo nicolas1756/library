@@ -257,61 +257,6 @@ public class ManageBooks {
         }
     }
 
-    public void getFavourites(ArrayList<String> favoriteBooks) {
-        ArrayList<Book> books = getAllBooks();
-        Iterator<Book> bookIt = books.iterator();  
-        while (bookIt.hasNext()) {
-            Book book = bookIt.next();
-            if (!favoriteBooks.contains(book.getBookId())) {
-                bookIt.remove();
-            }
-        }
-
-        ArrayList<Book> filteredBooks = books;
-
-        if (filteredBooks.isEmpty()) {
-            System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
-            return;
-        }
-
-        while (true) {
-            // Print table with selected columns
-            printTable(filteredBooks, EnumSet.of(
-                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
-            ));
-
-
-            System.out.println("\nEnter a book index to view more options.");
-            System.out.println("(Press Enter to exit)");
-            System.out.println("==============================================");
-
-            String input = scanner.nextLine().trim();
-
-            // If user pressed Enter, exit
-            if (input.isEmpty()) break;
-
-            // Validate numeric input
-            if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
-                continue;
-            }
-
-            int index = Integer.parseInt(input) - 1;
-            if (index < 0 || index >= filteredBooks.size()) {
-                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
-                continue;
-            }
-
-            // Valid book selected
-            
-            Book selectedBook = filteredBooks.get(index);
-            if(selectBookReader(selectedBook)){
-                break;
-            }
-        }
-    }
-
-
     // Menu shown after a reader selects a specific book
     public boolean selectBookReader(Book selectedBook) {
         boolean stayInMenu = true;
@@ -386,6 +331,131 @@ public class ManageBooks {
     }
 
 
+    public void getFavourites(ArrayList<String> favoriteBooks) {
+        ArrayList<Book> books = getAllBooks();
+        Iterator<Book> bookIt = books.iterator();  
+        while (bookIt.hasNext()) {
+            Book book = bookIt.next();
+            if (!favoriteBooks.contains(book.getBookId())) {
+                bookIt.remove();
+            }
+        }
+
+        ArrayList<Book> filteredBooks = books;
+
+        if (filteredBooks.isEmpty()) {
+            System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
+            return;
+        }
+
+        while (true) {
+            // Print table with selected columns
+            printTable(filteredBooks, EnumSet.of(
+                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
+            ));
+
+
+            System.out.println("\nEnter a book index to view more options.");
+            System.out.println("(Press Enter to exit)");
+            System.out.println("==============================================");
+
+            String input = scanner.nextLine().trim();
+
+            // If user pressed Enter, exit
+            if (input.isEmpty()) break;
+
+            // Validate numeric input
+            if (!input.matches("\\d+")) {
+                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
+                continue;
+            }
+
+            int index = Integer.parseInt(input) - 1;
+            if (index < 0 || index >= filteredBooks.size()) {
+                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                continue;
+            }
+
+            // Valid book selected
+            
+            Book selectedBook = filteredBooks.get(index);
+            if(selectFavouritedBook(selectedBook)){
+                break;
+            }
+        }
+    }
+
+    // Menu shown after a reader selects a specific book
+    public boolean selectFavouritedBook(Book selectedBook) {
+        boolean stayInMenu = true;
+        boolean loop = true;
+
+        while (loop) {
+            System.out.println("\n==============================================");
+            System.out.println(Ansi.BOLD + "Selected Book:" + Ansi.RESET + " " + selectedBook.getTitle());
+            System.out.println("Author: " + selectedBook.getAuthor());
+            System.out.println("Genre: " + selectedBook.getGenre());
+            System.out.println("Year: " + selectedBook.getYearPublished());
+            System.out.println("Available: " + (selectedBook.getAvailable() ? Ansi.GREEN + "Yes" : Ansi.RED + "No") + Ansi.RESET);
+            System.out.println("==============================================");
+            
+            if (selectedBook.getAvailable()) {
+                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
+            } else {
+                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " " + "\u001B[9mBorrow Book\u001B[0m" + " (Unavailable)");
+            }
+
+            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Remove from Favourites");
+            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
+            System.out.println("==============================================");
+            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+
+            String input = scanner.nextLine().trim();
+
+            switch (input) {
+                case "1":
+                    if (!selectedBook.getAvailable()) {
+                        System.out.println(Ansi.RED + "This book is currently borrowed and unavailable." + Ansi.RESET);
+
+                        break;
+                    }
+
+                    if (ConsoleUtils.confirmAction("Borrow book?")) {
+                        stayInMenu = false;
+                        loop = false;
+                        borrowBook(selectedBook);
+                        break;
+                    } else {
+                        System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                        stayInMenu = true;
+                        loop = true;
+                        break;
+                    }
+
+
+                case "2":
+                        stayInMenu = false;
+                        loop = false;
+                        removeFromFavorites(selectedBook);
+                        break;
+
+                case "0":
+                    loop = false;
+                    System.out.println(Ansi.ORANGE + "Returning to book list..." + Ansi.RESET);
+                    break;
+
+                default:
+                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+            }
+        }
+
+        if(stayInMenu){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
 
     private void borrowBook(Book book) {
         int days = 0;
@@ -484,6 +554,32 @@ public class ManageBooks {
 
         System.out.println(Ansi.GREEN + book.getTitle() + " added to favourites"+ Ansi.RESET);
     }
+
+    private void removeFromFavorites(Book book) {
+        ArrayList<User> accounts = fileHandling.readFromFile("accounts.ser", User.class);
+        String bookID = book.getBookId();
+
+        ArrayList<String> favorites = auth.getCurrentUser().getFavoriteBooks();
+
+        if (favorites.contains(bookID)) {
+            favorites.remove(bookID);
+            System.out.println(Ansi.GREEN + book.getTitle() + " has been removed from your favourites." + Ansi.RESET);
+        }
+
+        for (int i = 0; i < accounts.size(); i++) {
+            User u = accounts.get(i);
+            if (u.getUsername().equals(auth.getCurrentUser().getUsername())) {
+                accounts.set(i, auth.getCurrentUser());
+                break;
+            }
+        }
+
+        // Save updated accounts back to file
+        fileHandling.overrideFile("accounts.ser", accounts);
+    }
+
+
+    
 
     
     //handle searching and filtering of books
