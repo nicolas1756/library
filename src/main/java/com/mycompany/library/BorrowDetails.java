@@ -42,6 +42,7 @@ public class BorrowDetails implements Serializable {
     }
 
     // Getters
+    public String getBorrowID() { return borrowId; }
     public String getUsername() { return username; }
     public String getBookId() { return bookId; }
     public Date getDateBorrowed() { return dateBorrowed; }

@@ -20,7 +20,10 @@ public class Reader extends User {
     @Override
     public void displayMainMenu(Auth auth) {
         ManageBooks manageBooks = new ManageBooks();
+        ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
         manageBooks.setAuth(auth);
+        manageBorrowRecords.setAuth(auth);
+
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
@@ -46,7 +49,7 @@ public class Reader extends User {
 
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching your borrowed books..." + Ansi.RESET);
-
+                manageBorrowRecords.getAllBorrowDetails();
                 break;
 
             case "3":
