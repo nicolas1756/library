@@ -6,7 +6,7 @@ package com.mycompany.library;
 
 import java.io.Serializable;
 import java.util.Date;
-
+import java.util.UUID;
 
 /**
  *
@@ -16,13 +16,14 @@ import java.util.Date;
 public class BorrowDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
-public enum BorrowStatus {
-    BORROWED,
-    RETURNED,
-    OVERDUE
-}
+    public enum BorrowStatus {
+        BORROWED,
+        RETURNED,
+        OVERDUE
+    }
 
 
+    private final String borrowId;
     private String username;
     private String bookId;
     private Date dateBorrowed;
@@ -31,6 +32,7 @@ public enum BorrowStatus {
     private BorrowStatus status;  
 
     public BorrowDetails(String username, String bookId, Date dueDate) {
+        this.borrowId = generateBorrowId();
         this.username = username;
         this.bookId = bookId;
         this.dateBorrowed = new Date();  
@@ -54,6 +56,11 @@ public enum BorrowStatus {
     public void setDueDate(Date dueDate) { this.dueDate = dueDate; }
     public void setDateReturned(Date dateReturned) { this.dateReturned = dateReturned; }
     public void setStatus(BorrowStatus status) { this.status = status; }
+
+
+    private static String generateBorrowId() {
+        return UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+    }
 
     public boolean isReturned() {
         return dateReturned != null;

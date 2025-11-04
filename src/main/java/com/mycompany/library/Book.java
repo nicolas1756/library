@@ -17,12 +17,10 @@ public class Book implements Serializable {
     private String description;
     private Date lastEdited;
     private ArrayList<String> genre;
+    private Boolean available;
     private ArrayList<BorrowDetails> borrowDetails;
 
-    public Book(String title, String author, String yearPublished, String description, ArrayList<String> genre) {
-        //Pad short inputs with 'X' characters if they're less than 3 characters
-        String BookIDTitle = title.length() < 3 ? title + "XXX".substring(0, 3 - title.length()) : title;
-        
+    public Book(String title, String author, String yearPublished, String description, ArrayList<String> genre, boolean available) {
         this.bookId = generateBookId(title);
         this.title = title;
         this.author = author;
@@ -31,13 +29,16 @@ public class Book implements Serializable {
         this.lastEdited = new Date();
         this.genre = genre;
         this.borrowDetails = new ArrayList<>();
+        this.available = available;
     }
 
+
+    //Serves as a uid for book class
     private String generateBookId(String title) {
-        //Extract up to 3 letters from the title (ignore spaces)
+
         String prefix = title.replaceAll("\\s+", "").toUpperCase();
         if (prefix.length() < 3) prefix = String.format("%-3s", prefix).replace(' ', 'X');
-        else prefix = prefix.substring(0, 3);
+        else prefix = prefix.substring(0, 3); //Get the first 3 characters in uppercase
 
         //Generate a random 4-character alphanumeric string
         String randomCode = generateRandomCode(5);
@@ -48,7 +49,7 @@ public class Book implements Serializable {
         return id;
     }
 
-    private String generateRandomCode(int length) {
+    private String generateRandomCode(int length) { //helper method for generating random alphanumeric code
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
@@ -67,6 +68,7 @@ public class Book implements Serializable {
     public String getStringGenre() { return genre.toString(); }
     public Date getLastEdited() { return lastEdited; }
     public ArrayList<BorrowDetails> getBorrowDetails() { return borrowDetails; }
+    public boolean getAvailable() {return available;}
 
     // Setters
     public void setTitle(String title) { 
@@ -99,6 +101,10 @@ public class Book implements Serializable {
         updateLastEdited();
     }
 
+    public void setAvailable(boolean status){
+        this.available = status;
+    }
+
     // Automatically update last edited timestamp
     private void updateLastEdited() {
         this.lastEdited = new Date();
@@ -109,7 +115,7 @@ public class Book implements Serializable {
         updateLastEdited();
     }
     
-    @Override
+    @Override //usual toString method
     public String toString() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         String genreList = (genre != null && !genre.isEmpty())

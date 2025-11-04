@@ -50,7 +50,6 @@ public abstract class User implements Serializable {
     // Each role will have its own mainmenu
     public abstract void displayMainMenu(Auth auth);
 
-    // Each role will be given its own menu when selecting, 
-    // For librarians this will be for every book, for readers this will be for borrowed books
-    public abstract void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks);
+
+
 }

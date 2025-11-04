@@ -18,6 +18,7 @@ public class Reader extends User {
     @Override
     public void displayMainMenu(Auth auth) {
         ManageBooks manageBooks = new ManageBooks();
+        manageBooks.setAuth(auth);
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
@@ -59,37 +60,5 @@ public class Reader extends User {
         }
     }
 
-    public void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks) {
-        System.out.println("\n================" + Ansi.BOLD + " Manage Books " + Ansi.RESET +"================");
-        System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Manage Books");
-        System.out.println("   -> Add/remove/edit the collection of books.");
-        System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " View All Borrow Records");
-        System.out.println("   -> View all borrowed books and their statuses.");
-        System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Back");
-        System.out.println("   -> Goes back to main menu.");
-        System.out.println("==============================================");
-        System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
 
-
-        String input = scanner.next();
-
-        switch (input) {
-            case "1":
-                System.out.println(Ansi.ORANGE + "Fetching books..." + Ansi.RESET);
-
-                break;
-
-            case "2":
-                System.out.println(Ansi.ORANGE + "Fetching borrow records..." + Ansi.RESET);
-                break;
-
-            case "3":
-                System.out.println(Ansi.ORANGE + "Going back..." + Ansi.RESET);
-                auth.getCurrentUser().displayMainMenu(auth);
-                break;
-
-            default:
-                System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
-        }
-    }
 }

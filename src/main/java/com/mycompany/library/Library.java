@@ -8,24 +8,27 @@ package com.mycompany.library;
 import java.util.Scanner;
 
 
-public class Library {
+public class Library { //main class where the program executes from
 
     public static void main(String[] args) {
 
 
 
-        //file read/write test
+        //Uncomment to fix book data file
         ManageBooks manageBooks = new ManageBooks();
         manageBooks.loadBooks();
-        
-        FileHandling fileHandling = new FileHandling();
-        Auth auth = new Auth();
-        Scanner scanner = new Scanner(System.in);
-        
-        //System.out.println(fileHandling.readFromFile("accounts.ser", User.class));
-        
 
+
+        //Initialize necessary components
+        //Scanner scanner = new Scanner(System.in);
+        //FileHandling fileHandling = new FileHandling();
+        Auth auth = new Auth();
         
+        //Display admin account info just for demonstration purposes
+        System.out.println(Ansi.BOLD + Ansi.BLUE + "Admin account" + Ansi.RESET);
+        System.out.println(Ansi.BLUE + "Username: Admin" + Ansi.RESET);
+        System.out.println(Ansi.BLUE + "Password: Admin123" + Ansi.RESET);
+
         while (true) {
             if (!auth.isLoggedIn()) {
                 auth.authMenu(); // login/register

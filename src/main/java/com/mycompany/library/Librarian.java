@@ -17,7 +17,7 @@ public class Librarian extends User {
     public Librarian(String username, String password, String fullName) {
         super(username, password, fullName, "Librarian");
     }
-
+    
 
     @Override
     public void displayMainMenu(Auth auth) {
@@ -40,7 +40,7 @@ public class Librarian extends User {
         switch (input) {
             case "1":
                 System.out.println(Ansi.ORANGE + "Fetching books..." + Ansi.RESET);
-                
+                displayManageBooksMenu(auth, scanner, manageBooks);
                 break;
 
             case "2":
@@ -59,6 +59,8 @@ public class Librarian extends User {
 
     public void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks) {
         boolean untilExit = true;
+        manageBooks.setAuth(auth);
+        
         while (untilExit) {
             System.out.println("\n================" + Ansi.BOLD + " Manage Books " + Ansi.RESET +"================");
             System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Add a new Book");
@@ -76,6 +78,8 @@ public class Librarian extends User {
 
             String input = scanner.next();
 
+
+            
             switch (input) {
                 case "1":
                     System.out.println(Ansi.ORANGE + "Add a book..." + Ansi.RESET + "\n");
@@ -110,6 +114,8 @@ public class Librarian extends User {
         }
 
     }
+
+  
 
         
 }

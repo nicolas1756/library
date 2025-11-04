@@ -64,24 +64,35 @@ public class Auth {
     }
         
     public void login() {
+        scanner.nextLine();
         System.out.println("====================" + Ansi.BOLD + " Login " + Ansi.RESET +"===================");
         System.out.println(Ansi.RED + "Enter 0 to exit" + Ansi.RESET);
         System.out.println("==============================================");
         while (true) {
             System.out.print("Enter your username: ");
-            String username = scanner.next();
+            String username = scanner.nextLine();
 
             if (username.equals("0")) { // go back to auth menu if 0 entered
                 authMenu();
                 break;
             }
 
+            if (username.equals("")) {
+                System.out.println(Ansi.RED + "Username can't be empty, please try again." + Ansi.RESET);
+                continue;
+            }
+
             System.out.print("Enter your password: ");
-            String password = scanner.next();
+            String password = scanner.nextLine();
 
             if (password.equals("0")) { // go back to auth menu if 0 entered
                 authMenu();
                 break;
+            }
+
+            if (password.equals("")) {
+                System.out.println(Ansi.RED + "Password can't be empty, please try again." + Ansi.RESET);
+                continue;
             }
             
             if (authenticate(username, password)) {
