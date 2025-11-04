@@ -1,5 +1,7 @@
 package com.mycompany.library;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -44,10 +46,13 @@ public class Reader extends User {
 
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching your borrowed books..." + Ansi.RESET);
+
                 break;
 
             case "3":
-                System.out.println(Ansi.ORANGE + "Fetching your list of favorited books..." + Ansi.RESET);
+                System.out.println(Ansi.ORANGE + "Fetching your list of favorited books...\n" + Ansi.RESET);
+                ArrayList<String> favoriteBooks = auth.getCurrentUser().getFavoriteBooks();
+                manageBooks.getFavourites(favoriteBooks);
                 break;
 
             case "4":
@@ -59,6 +64,7 @@ public class Reader extends User {
                 System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
         }
     }
+
 
 
 }

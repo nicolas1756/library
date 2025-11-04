@@ -119,20 +119,10 @@ public class Auth {
         for (User account : accounts) { //loops through accounts
             String storedUsername = account.getUsername();//get stored username and password for each account
             String storedPassword = account.getPassword();;
-            String storedFullname = account.getFullName();;
-            String storedRole = account.getRole();;
             
             if (storedUsername != null && storedPassword != null) { //ensure stored username and password is not null
                 if (storedUsername.equals(username) && storedPassword.equals(password)) { //checks if username and password match
-                    
-                    User user;
-                    if ("Librarian".equalsIgnoreCase(storedRole)) {
-                        user = new Librarian(storedUsername, storedPassword, storedFullname);
-                    } else {
-                        user = new Reader(storedUsername, storedPassword, storedFullname);
-                    }
-
-                    setCurrentUser(user); // store it globally
+                    setCurrentUser(account);  //sets current user if match found
                     return true;
                 }
             }

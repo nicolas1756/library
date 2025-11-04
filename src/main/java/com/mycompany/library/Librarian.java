@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.library;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Scanner;
 
@@ -14,7 +15,7 @@ import com.mycompany.library.ManageBooks.Column;
 public class Librarian extends User {
     private static final long serialVersionUID = 1L;
         
-    public Librarian(String username, String password, String fullName) {
+    public Librarian(String username, String password, String fullName, ArrayList <String> favoriteBooks) {
         super(username, password, fullName, "Librarian");
     }
     

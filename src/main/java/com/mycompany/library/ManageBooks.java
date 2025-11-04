@@ -257,6 +257,60 @@ public class ManageBooks {
         }
     }
 
+    public void getFavourites(ArrayList<String> favoriteBooks) {
+        ArrayList<Book> books = getAllBooks();
+        Iterator<Book> bookIt = books.iterator();  
+        while (bookIt.hasNext()) {
+            Book book = bookIt.next();
+            if (!favoriteBooks.contains(book.getBookId())) {
+                bookIt.remove();
+            }
+        }
+
+        ArrayList<Book> filteredBooks = books;
+
+        if (filteredBooks.isEmpty()) {
+            System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
+            return;
+        }
+
+        while (true) {
+            // Print table with selected columns
+            printTable(filteredBooks, EnumSet.of(
+                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR
+            ));
+
+
+            System.out.println("\nEnter a book index to view more options.");
+            System.out.println("(Press Enter to exit)");
+            System.out.println("==============================================");
+
+            String input = scanner.nextLine().trim();
+
+            // If user pressed Enter, exit
+            if (input.isEmpty()) break;
+
+            // Validate numeric input
+            if (!input.matches("\\d+")) {
+                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
+                continue;
+            }
+
+            int index = Integer.parseInt(input) - 1;
+            if (index < 0 || index >= filteredBooks.size()) {
+                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                continue;
+            }
+
+            // Valid book selected
+            
+            Book selectedBook = filteredBooks.get(index);
+            if(selectBookReader(selectedBook)){
+                break;
+            }
+        }
+    }
+
 
     // Menu shown after a reader selects a specific book
     public boolean selectBookReader(Book selectedBook) {
@@ -271,7 +325,13 @@ public class ManageBooks {
             System.out.println("Year: " + selectedBook.getYearPublished());
             System.out.println("Available: " + (selectedBook.getAvailable() ? Ansi.GREEN + "Yes" : Ansi.RED + "No") + Ansi.RESET);
             System.out.println("==============================================");
-            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
+            
+            if (selectedBook.getAvailable()) {
+                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
+            } else {
+                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " " + "\u001B[9mBorrow Book\u001B[0m" + " (Unavailable)");
+            }
+
             System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Add to Favorites");
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
             System.out.println("==============================================");
@@ -288,16 +348,24 @@ public class ManageBooks {
                         break;
                     }
 
-                    stayInMenu = false;
-                    loop = false;
-                    borrowBook(selectedBook);
-                    break;
+                    if (ConsoleUtils.confirmAction("Borrow book?")) {
+                        stayInMenu = false;
+                        loop = false;
+                        borrowBook(selectedBook);
+                        break;
+                    } else {
+                        System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                        stayInMenu = true;
+                        loop = true;
+                        break;
+                    }
+
 
                 case "2":
-                    stayInMenu = false;
-                    loop = false;
-                    addToFavorites(selectedBook);
-                    break;
+                        stayInMenu = false;
+                        loop = false;
+                        addToFavorites(selectedBook);
+                        break;
 
                 case "0":
                     loop = false;
@@ -398,8 +466,23 @@ public class ManageBooks {
     }
 
     private void addToFavorites(Book book) {
-        System.out.println(Ansi.GREEN + "⭐ \"" + book.getTitle() + "\" added to your favorites." + Ansi.RESET);
-        // TODO: add to user's favorite list
+        ArrayList<User> accounts = fileHandling.readFromFile("accounts.ser", User.class);
+
+        String bookID = book.getBookId();
+        auth.getCurrentUser().addFavoriteBook(bookID);
+
+
+        for (int i = 0; i < accounts.size(); i++) {
+            User u = accounts.get(i);
+            if (u.getUsername().equals(auth.getCurrentUser().getUsername())) {
+                accounts.set(i, auth.getCurrentUser());
+                break;
+            }
+        }
+
+        fileHandling.overrideFile("accounts.ser", accounts);
+
+        System.out.println(Ansi.GREEN + book.getTitle() + " added to favourites"+ Ansi.RESET);
     }
 
     
@@ -745,7 +828,8 @@ public class ManageBooks {
                             }
                             inputComplete = true;
                             break;
-                        } else {                            System.out.println(Ansi.RED + "Genre cannot be empty!" + Ansi.RESET);
+                        } else {                            
+                            System.out.println(Ansi.RED + "Genre cannot be empty!" + Ansi.RESET);
                         }
                     }
             }
@@ -1023,7 +1107,7 @@ public class ManageBooks {
             Book book = new Book(title, author, year, description, genres, true);
 
             // 40% chance the book is already borrowed
-            if (random.nextDouble() < 0.4) {
+            if (random.nextDouble() < 0.3) {
                 String username = sampleUsers[random.nextInt(sampleUsers.length)];
                 Calendar cal = Calendar.getInstance();
                 cal.add(Calendar.DATE, 7 + random.nextInt(14)); // due in 1–3 weeks

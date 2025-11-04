@@ -15,8 +15,8 @@ public class Library { //main class where the program executes from
 
 
         //Uncomment to fix book data file
-        ManageBooks manageBooks = new ManageBooks();
-        manageBooks.loadBooks();
+        //ManageBooks manageBooks = new ManageBooks();
+        //manageBooks.loadBooks();
 
 
         //Initialize necessary components
@@ -26,13 +26,14 @@ public class Library { //main class where the program executes from
         
         //Display admin account info just for demonstration purposes
         System.out.println(Ansi.BOLD + Ansi.BLUE + "Admin account" + Ansi.RESET);
-        System.out.println(Ansi.BLUE + "Username: Admin" + Ansi.RESET);
-        System.out.println(Ansi.BLUE + "Password: Admin123" + Ansi.RESET);
+        System.out.println(Ansi.BLUE + "Username: admin" + Ansi.RESET);
+        System.out.println(Ansi.BLUE + "Password: admin123" + Ansi.RESET);
 
         while (true) {
             if (!auth.isLoggedIn()) {
                 auth.authMenu(); // login/register
             } else {
+                
                 auth.getCurrentUser().displayMainMenu(auth);
             }
         }
