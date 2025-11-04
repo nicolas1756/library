@@ -277,7 +277,7 @@ public class ManageBooks {
         while (true) {
             // Print table with selected columns
             printTable(filteredBooks, EnumSet.of(
-                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR
+                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
             ));
 
 
