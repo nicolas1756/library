@@ -23,6 +23,7 @@ public class Librarian extends User {
     @Override
     public void displayMainMenu(Auth auth) {
         ManageBooks manageBooks = new ManageBooks();
+        ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
@@ -46,6 +47,7 @@ public class Librarian extends User {
 
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching borrow records..." + Ansi.RESET);
+                manageBorrowRecords.getAllBorrowDetails();
                 break;
 
             case "0":

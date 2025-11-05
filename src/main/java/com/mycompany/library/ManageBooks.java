@@ -266,7 +266,7 @@ public class ManageBooks {
             System.out.println("\n==============================================");
             System.out.println(Ansi.BOLD + "Selected Book:" + Ansi.RESET + " " + selectedBook.getTitle());
             System.out.println("Author: " + selectedBook.getAuthor());
-            System.out.println("Genre: " + selectedBook.getGenre());
+            System.out.println("Genre: " + selectedBook.getStringGenre());
             System.out.println("Year: " + selectedBook.getYearPublished());
             System.out.println("Available: " + (selectedBook.getAvailable() ? Ansi.GREEN + "Yes" : Ansi.RED + "No") + Ansi.RESET);
             System.out.println("==============================================");

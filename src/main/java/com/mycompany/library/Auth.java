@@ -9,6 +9,7 @@ import java.util.HashMap;
  */
 public class Auth {
     
+    
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
     

@@ -15,8 +15,8 @@ public class Library { //main class where the program executes from
 
 
         //Uncomment to fix book data file
-        consoleUtil util = new consoleUtil();
-        util.loadBooks();
+        //consoleUtil util = new consoleUtil();
+        //util.loadBooks();
 
 
         //Initialize necessary components
