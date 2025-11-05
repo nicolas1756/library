@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -12,6 +13,8 @@ public class ManageBorrowRecords {
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
     consoleUtil ConsoleUtils = new consoleUtil();
+    
+    static HashMap<String, String> bookName = new HashMap<String,String>();
     
     private Auth auth;
 
@@ -24,38 +27,62 @@ public class ManageBorrowRecords {
     }
 
     public void getBorrowDetailsByUserID(){
+        ArrayList<BorrowDetails> records = getAllRecordFromBooks();
+        String username = auth.getCurrentUser().getUsername();
 
+        records.sort((a, b) -> a.getDueDate().compareTo(b.getDueDate()));
+
+
+        Iterator<BorrowDetails> record = records.iterator();  
+        while (record.hasNext()) {
+            BorrowDetails nextRecord = record.next();
+
+            if(!nextRecord.getUsername().equals(username)){
+                record.remove();
+            }
+        }
+
+        printTable(records, EnumSet.of(Column.INDEX, Column.TITLE, Column.DATEBORROWED, Column.DUEDATE, Column.DATERETURNED, Column.STATUS));
     }
 
     
-    public ArrayList<BorrowDetails> getAllBorrowDetails() {
-        ArrayList<Book> books = getAllBooks();
+    public void getAllBorrowDetails() {
+        ArrayList<BorrowDetails> record = getAllRecordFromBooks();
+        printTable(record, EnumSet.allOf(Column.class));
+        
+    }
+
+
+    public ArrayList<BorrowDetails> getAllRecordFromBooks() {
+        ArrayList<Book> books = fileHandling.readFromFile("books.ser", Book.class);
+
+        if(books.isEmpty()){
+            books = new ArrayList<>();
+        }
+
         ArrayList<BorrowDetails> allDetails = new ArrayList<>();
 
         for (Book book : books) {
+            bookName.put(book.getBookId(), book.getTitle());
+
             ArrayList<BorrowDetails> details = book.getBorrowDetails();
             if (details != null) {
                 allDetails.addAll(details);
             }
         }
 
-        printTable(allDetails, EnumSet.allOf(Column.class));
         return allDetails;
-    }
-
-
-    public ArrayList<Book> getAllBooks() {
-        ArrayList<Book> books = fileHandling.readFromFile("books.ser", Book.class);
-        return books != null ? books : new ArrayList<>();
     }
 
     //table methods
 
     public enum Column {
-        INDEX, ID, USERNAME, BOOKID, DATEBORROWED, DUEDATE, DATERETURNED, STATUS
+        INDEX, ID, USERNAME, TITLE, BOOKID, DATEBORROWED, DUEDATE, DATERETURNED, STATUS
     }
 
     public static void printTable(ArrayList<BorrowDetails> records, EnumSet<Column> columns) {
+
+        System.out.print("\n");
 
         if (records == null || records.isEmpty()) {
             System.out.println("\u001B[31mNo records available.\u001B[0m");
@@ -80,6 +107,7 @@ public class ManageBorrowRecords {
             Column.INDEX, "Index",
             Column.ID, "Record ID",
             Column.USERNAME, "Username",
+            Column.TITLE, "Title",
             Column.BOOKID, "Book ID",
             Column.DATEBORROWED, "Date Borrowed",
             Column.DUEDATE, "Due Date",
@@ -96,6 +124,7 @@ public class ManageBorrowRecords {
                     case INDEX -> String.valueOf(records.indexOf(record) + 1);
                     case ID -> String.valueOf(record.getBorrowID());
                     case USERNAME -> record.getUsername();
+                    case TITLE -> bookName.get(record.getBookId());
                     case BOOKID -> record.getBookId();
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());
@@ -140,6 +169,7 @@ public class ManageBorrowRecords {
                     case INDEX -> String.valueOf(i);
                     case ID -> String.valueOf(record.getBorrowID());
                     case USERNAME -> record.getUsername();
+                    case TITLE -> bookName.get(record.getBookId());
                     case BOOKID -> record.getBookId();
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());

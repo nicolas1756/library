@@ -49,7 +49,7 @@ public class Reader extends User {
 
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching your borrowed books..." + Ansi.RESET);
-                manageBorrowRecords.getAllBorrowDetails();
+                manageBorrowRecords.getBorrowDetailsByUserID();
                 break;
 
             case "3":

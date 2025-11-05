@@ -349,6 +349,8 @@ public class ManageBooks {
         }
 
         while (true) {
+            filteredBooks.sort((a, b) -> Boolean.compare(!a.getAvailable(), !b.getAvailable()));
+
             // Print table with selected columns
             printTable(filteredBooks, EnumSet.of(
                 Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
@@ -839,6 +841,7 @@ public class ManageBooks {
     // Get all books
     public ArrayList<Book> getAllBooks() {
         ArrayList<Book> books = fileHandling.readFromFile("books.ser", Book.class);
+        books.sort( (a, b) -> { return -1 * a.getTitle().compareTo(b.getTitle()); } );
         return books != null ? books : new ArrayList<>();
     }
 
