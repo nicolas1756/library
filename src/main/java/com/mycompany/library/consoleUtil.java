@@ -11,6 +11,13 @@ public class consoleUtil {
     private static final Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
 
+
+    public static String truncateString(String str, int length) {
+        if (str == null) return "";
+        if (str.length() <= length) return str;
+        return str.substring(0, length - 3) + "...";
+    }
+
     public static boolean confirmAction(String message) {
         System.out.print(Ansi.ORANGE + message + " (y/n): " + Ansi.RESET);
         String input = scanner.nextLine().trim().toLowerCase();
@@ -226,16 +233,26 @@ public class consoleUtil {
             Book book = new Book(title, author, year, description, genres, true);
 
             // 30% chance the book is borrowed
-            if (random.nextDouble() < 0.3) {
+            if (random.nextDouble() < 0.3) { // 30% chance this book is borrowed
                 String username = sampleUsers[random.nextInt(sampleUsers.length)];
                 Calendar cal = Calendar.getInstance();
-                cal.add(Calendar.DATE, 7 + random.nextInt(14)); // due in 1–3 weeks
+
+                // 20% of these borrowed books will be overdue
+                if (random.nextDouble() < 0.2) {
+                    // overdue: due date 1–14 days ago
+                    cal.add(Calendar.DATE, -1 * (1 + random.nextInt(14)));
+                } else {
+                    // normal: due date 7–21 days in the future
+                    cal.add(Calendar.DATE, 7 + random.nextInt(14));
+                }
+
                 Date dueDate = cal.getTime();
 
                 BorrowDetails record = new BorrowDetails(username, book.getBookId(), dueDate);
                 book.setAvailable(false);
                 book.addBorrowRecord(record);
             }
+
 
             books.add(book);
         }

@@ -130,7 +130,7 @@ public class ManageBooks {
                 int width = colWidths.get(col);
                 String value = switch (col) {
                     case INDEX -> String.valueOf(i);
-                    case ID -> String.valueOf(book.getBookId());
+                    case ID -> book.getBookId();
                     case TITLE -> truncateString(book.getTitle(), 30);
                     case AUTHOR -> book.getAuthor();
                     case GENRE -> book.getStringGenre();
@@ -138,7 +138,17 @@ public class ManageBooks {
                     case LAST_EDITED -> formatDate(book.getLastEdited());
                     case AVAILABLE -> String.valueOf(book.getAvailable());
                 };
-                row.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", value == null ? "" : value));
+
+                String displayValue = (value == null) ? "" : value;
+                String paddedValue = String.format("%-" + (width - 1) + "s", displayValue);
+
+                // Apply color only to AVAILABLE column
+                if (col == Column.AVAILABLE) {
+                    String color = book.getAvailable() ? Ansi.GREEN : Ansi.ORANGE; // ORANGE not standard in ANSI
+                    paddedValue = color + paddedValue + Ansi.RESET;
+                }
+
+                row.append(paddedValue).append(VSEP).append(" ");
             }
             System.out.println(row);
             i++;

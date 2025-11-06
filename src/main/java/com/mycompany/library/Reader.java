@@ -33,7 +33,7 @@ public class Reader extends User {
         System.out.println("   -> View or renew your borrowed books.");
         System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " My Favorites");
         System.out.println("   -> View your list of favorited books.");
-        System.out.println(Ansi.ORANGE + "4." + Ansi.RESET + " Logout");
+        System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Logout");
         System.out.println("   -> Exit your account.");
         System.out.println("==============================================");
         System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -58,7 +58,7 @@ public class Reader extends User {
                 manageBooks.getFavourites(favoriteBooks);
                 break;
 
-            case "4":
+            case "0":
                 System.out.println(Ansi.RED + "Logging out..." + Ansi.RESET);
                 auth.logout();
                 break;
