@@ -1,5 +1,5 @@
 ```
-**IF on vs code**
+IF on vs code
 
 ensure your launch.json looks something like this:
 
@@ -18,7 +18,7 @@ ensure your launch.json looks something like this:
 
 ==============================================================
 
-**In the event of file corruption**
+In the event of file corruption
 
 1. search for Library.java
 2. Uncomment this line around line 17:
