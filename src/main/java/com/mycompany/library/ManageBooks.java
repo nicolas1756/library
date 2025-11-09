@@ -4,6 +4,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Scanner;
+
+import com.mycompany.library.BorrowDetails.BorrowStatus;
+
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -43,13 +46,14 @@ public class ManageBooks {
     //=================================================
 
     // Generic method to print table
-    public static void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
+    public void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
         
         // Handle empty book list
         if (books == null || books.isEmpty()) {
             System.out.println("\u001B[31mNo books available.\u001B[0m");
             return;
         }
+
 
         // Detect Unicode support to decide border style
         boolean supportsUnicode = consoleUtil.detectUnicodeSupport();
@@ -126,6 +130,13 @@ public class ManageBooks {
         int i = 1;
         for (Book book : books) {
             StringBuilder row = new StringBuilder(VSEP + " ");
+
+            boolean isCurrentUserBorrowing = book.getBorrowDetails().stream()
+                .anyMatch(record -> record.getStatus() == BorrowStatus.BORROWED && 
+                        record.getUsername().equals(auth.getCurrentUser().getUsername()));
+
+            String available = isCurrentUserBorrowing ? book.getAvailable() + "*" : String.valueOf(book.getAvailable());
+
             for (Column col : columns) {
                 int width = colWidths.get(col);
                 String value = switch (col) {
@@ -136,7 +147,7 @@ public class ManageBooks {
                     case GENRE -> book.getStringGenre();
                     case YEAR -> String.valueOf(book.getYearPublished());
                     case LAST_EDITED -> formatDate(book.getLastEdited());
-                    case AVAILABLE -> String.valueOf(book.getAvailable());
+                    case AVAILABLE -> String.valueOf(available);
                 };
 
                 String displayValue = (value == null) ? "" : value;
@@ -156,121 +167,143 @@ public class ManageBooks {
 
         //Print bottom border
         System.out.println(bottom);
+
+        if(!auth.isAdmin()){
+            System.out.println("\n* Already Borrowing");
+        }
+
+
     }
 
-    //handle printing table of book details for librarian
-    public void printLibrarianTable(Boolean promptDes) {
-        
-        //get all books
+   // Handles printing the table of books
+    public void displayTable(boolean promptSelect) {
         ArrayList<Book> books = getAllBooks();
 
-        //option to add filters or search query
-        ArrayList<Book> filteredBooks = searchFilterMenu(books);
 
-        //while loop for error checking when prompting for description
-        while (true) {
+        boolean filter = true;
 
-            //print table with selected columns, if promptDes false break after
-            printTable(filteredBooks, EnumSet.of(Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED, Column.AVAILABLE));
+        boolean loop = true;
 
-            //prompt user to enter book index to view its description
-            if (promptDes && filteredBooks.size() > 0) {
-                System.out.println("\nEnter a Book index to view its description (or press Enter to skip)");
-                System.out.println("==============================================");
+        while (loop) {
 
-                String input = scanner.nextLine().trim();
-
-                //skip if user presses Enter
-                if (input.isEmpty()) {
-                    break; 
-                }
-
-                // ensure numeric input
-                if (!input.matches("\\d+")) {
-                    System.out.println(Ansi.RED + "Invalid input. Please enter a number from the table or press Enter to skip." + Ansi.RESET);
-                    continue;
-                }
-
-                //convert to index
-                int index = Integer.parseInt(input) - 1;
-
-                //ensure index in within range
-                if (index < 0 || index >= filteredBooks.size()) {
-                    System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
-                    continue;
-                }
-
-                //get book from index and display description
-                Book selectedBook = filteredBooks.get(index);
-
-                System.out.println("Title: " + selectedBook.getTitle());
-                System.out.println("Description: " + selectedBook.getDescription());
-                System.out.println("==============================================");
-                System.out.println("Press Enter to continue...");
-                scanner.nextLine();
+            
+            if(filter){
+                ArrayList<Book> filteredBooks = searchFilterMenu(books);
+                filter = false;
             }
 
-            break; // exit the while loop
-        }
+            if(filteredBooks.isEmpty()){
+                break;
+            }
 
-        
-    }
-
-   // Handles printing the table of available books for readers
-    public void printReaderTable(boolean promptSelect) {
-        ArrayList<Book> books = getAllBooks();
-
-        // Apply filters/search (returns filtered list)
-        ArrayList<Book> filteredBooks = searchFilterMenu(books);
-
-        if (filteredBooks.isEmpty()) {
-            System.out.println(Ansi.RED + "\nNo books found with the given criteria." + Ansi.RESET);
-            return;
-        }
-
-        while (true) {
             // Print table with selected columns
-            printTable(filteredBooks, EnumSet.of(
-                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
-            ));
 
-            // Prompt selection
+            if(auth.getCurrentUser().getRole() == "Librarian"){
+                printTable(filteredBooks, EnumSet.of(
+                    Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED, Column.AVAILABLE
+                ));
+            }
+            else{
+                printTable(filteredBooks, EnumSet.of(
+                    Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
+                ));
+            }
+
             if (!promptSelect) break;
 
-            System.out.println("\nEnter a book index to view more options.");
-            System.out.println("(Press Enter to exit)");
-            System.out.println("==============================================");
+            
+            if(auth.getCurrentUser().getRole() == "Librarian"){
+                System.out.println("\nEnter a Book index to view its description");
+                System.out.println("Press 'F' to filter again, or '0' to exit");
+                System.out.println("==============================================");
+            }
+            else{
+                System.out.println("\nEnter a book index to view more options.");
+                System.out.println("Press 'F' to filter again, or '0' to exit");
+                System.out.println("==============================================");
+            }
+
+
 
             String input = scanner.nextLine().trim();
 
-            // If user pressed Enter, exit
-            if (input.isEmpty()) break;
-
-            // Validate numeric input
-            if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
-                continue;
+            if (input.isEmpty()) {
+                continue; 
             }
 
-            int index = Integer.parseInt(input) - 1;
-            if (index < 0 || index >= filteredBooks.size()) {
-                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
-                continue;
-            }
+            // Handle different input types
+            switch (input.toUpperCase()) {
+                case "":
+                    filteredBooks = new ArrayList<>();
+                    continue; // Exit the method
+                case "0":
+                    filteredBooks = new ArrayList<>();
+                    continue; // Exit the method
+                    
+                case "F":
+                    filter = true;
+                    continue; // Go back to filter menu
+                    
+                default:
+                    // Validate numeric input for book selection
+                    if (!input.matches("\\d+")) {
+                        System.out.println(Ansi.RED + "Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit." + Ansi.RESET);
+                        continue;
+                    }
 
-            // Valid book selected
-            
-            Book selectedBook = filteredBooks.get(index);
-            if(selectBookReader(selectedBook)){
-                break;
-            }
-        }
+                    int index = Integer.parseInt(input) - 1;
+                    
+                    if (index < 0 || index >= filteredBooks.size()) {
+                        System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                        continue;
+                    }
+
+                    // Valid book selected
+
+                    if(auth.getCurrentUser().getRole().equals("Librarian")){
+                        Book selectedBook = filteredBooks.get(index);
+
+                        System.out.println("Title: " + selectedBook.getTitle());
+                        System.out.println("Description: " + selectedBook.getDescription());
+                        System.out.println("==============================================");
+                        System.out.println("Press Enter to continue...");
+                        scanner.nextLine();
+
+                    }
+                    if(auth.getCurrentUser().getRole().equals("Reader")){
+                        //get book from index and display description
+                        Book selectedBook = filteredBooks.get(index);
+
+                        System.out.println("Title: " + selectedBook.getTitle());
+                        System.out.println("Description: " + selectedBook.getDescription());
+                        System.out.println("==============================================");
+
+                        if(selectBookReader(selectedBook)){
+                            loop = false;
+                        }
+                        
+                        
+                    }
+            }     
+        }   
     }
 
     // Menu shown after a reader selects a specific book
     public boolean selectBookReader(Book selectedBook) {
         boolean stayInMenu = true;
         boolean loop = true;
+
+        boolean alreadyBorrowing = false;
+        boolean alreadyFav = false;
+
+        // Check if user is already borrowing this book
+        alreadyBorrowing = selectedBook.getBorrowDetails().stream()
+            .anyMatch(record -> record.getStatus() == BorrowStatus.BORROWED && 
+                    record.getUsername().equals(auth.getCurrentUser().getUsername()));
+
+        // Check if book is already in favorites
+        alreadyFav = auth.getCurrentUser().getFavoriteBooks().contains(selectedBook.getBookId());
+        
 
         while (loop) {
             System.out.println("\n==============================================");
@@ -283,11 +316,23 @@ public class ManageBooks {
             
             if (selectedBook.getAvailable()) {
                 System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
-            } else {
+            } 
+
+            else if(alreadyBorrowing){
+                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " " + "\u001B[9mBorrow Book\u001B[0m" + " (already borrowing)");
+            }
+            
+            else {
                 System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " " + "\u001B[9mBorrow Book\u001B[0m" + " (Unavailable)");
             }
 
-            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Add to Favorites");
+            if(alreadyFav){
+                System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Remove from Favorites");
+            }
+            else{
+                System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Add to Favorites");
+            }
+            
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
             System.out.println("==============================================");
             System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -296,6 +341,11 @@ public class ManageBooks {
 
             switch (input) {
                 case "1":
+                    if(alreadyBorrowing){
+                        System.out.println(Ansi.RED + "You have already borrowed this book." + Ansi.RESET);
+                        break;
+                    }
+
                     if (!selectedBook.getAvailable()) {
                         System.out.println(Ansi.RED + "This book is currently borrowed and unavailable." + Ansi.RESET);
                         System.out.println("You can still add it to your favourites and borrow it once it becomes available.");
@@ -303,10 +353,56 @@ public class ManageBooks {
                         break;
                     }
 
+                    int days = 0;
+
+                        while (true) {
+                            System.out.println("\n==============================================");
+                            System.out.println(Ansi.ORANGE + "\nA fee of RM1.00 will be charged for each day a book is overdue.\n" + Ansi.RESET);
+                            System.out.println(Ansi.BOLD + "Choose Borrow Duration" + Ansi.RESET);
+                            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " 7 days");
+                            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " 14 days");
+                            System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " 30 days");
+                            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Cancel");
+                            System.out.println("==============================================");
+                            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+
+                            String borrowFor = scanner.nextLine().trim();
+
+                            // Check for blank input
+                            if (borrowFor.isEmpty()) {
+                                System.out.println(Ansi.RED + "Input cannot be empty. Please enter a number (0–3)." + Ansi.RESET);
+                                continue;
+                            }
+
+                            // Check if numeric
+                            if (!borrowFor.matches("\\d+")) {
+                                System.out.println(Ansi.RED + "Invalid input. Please enter only numbers (0–3)." + Ansi.RESET);
+                                continue;
+                            }
+
+                            switch (borrowFor) {
+                                case "1":
+                                    days = 7;
+                                    break;
+                                case "2":
+                                    days = 14;
+                                    break;
+                                case "3":
+                                    days = 30;
+                                    break;
+                                case "0":
+                                    System.out.println(Ansi.ORANGE + "Borrowing cancelled." + Ansi.RESET);
+                                default:
+                                    System.out.println(Ansi.RED + "Invalid option. Please choose between 0–3." + Ansi.RESET);
+                            }
+
+                            break;
+                        }
+
                     if (ConsoleUtils.confirmAction("Borrow book?")) {
                         stayInMenu = false;
                         loop = false;
-                        borrowBook(selectedBook);
+                        borrowBook(selectedBook, days) ;
                         break;
                     } else {
                         System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
@@ -317,8 +413,15 @@ public class ManageBooks {
 
 
                 case "2":
-                        stayInMenu = false;
-                        loop = false;
+                        if(alreadyFav){
+                            removeFromFavorites(selectedBook);
+                            alreadyFav = false;
+                            break;
+                        }
+                        
+                        stayInMenu = true;
+                        loop = true;
+                        alreadyFav = true;
                         addToFavorites(selectedBook);
                         break;
 
@@ -368,13 +471,17 @@ public class ManageBooks {
 
 
             System.out.println("\nEnter a book index to view more options.");
-            System.out.println("(Press Enter to exit)");
+            System.out.println("(Press 0 to exit)");
             System.out.println("==============================================");
 
             String input = scanner.nextLine().trim();
+            
+            if(input.equals("0")) break;
 
             // If user pressed Enter, exit
-            if (input.isEmpty()) break;
+            if (input.isEmpty()) continue;
+
+
 
             // Validate numeric input
             if (!input.matches("\\d+")) {
@@ -391,132 +498,14 @@ public class ManageBooks {
             // Valid book selected
             
             Book selectedBook = filteredBooks.get(index);
-            if(selectFavouritedBook(selectedBook)){
+            if(selectBookReader(selectedBook)){
                 break;
             }
         }
     }
 
-    // Menu shown after a reader selects a specific book
-    public boolean selectFavouritedBook(Book selectedBook) {
-        boolean stayInMenu = true;
-        boolean loop = true;
-
-        while (loop) {
-            System.out.println("\n==============================================");
-            System.out.println(Ansi.BOLD + "Selected Book:" + Ansi.RESET + " " + selectedBook.getTitle());
-            System.out.println("Author: " + selectedBook.getAuthor());
-            System.out.println("Genre: " + selectedBook.getGenre());
-            System.out.println("Year: " + selectedBook.getYearPublished());
-            System.out.println("Available: " + (selectedBook.getAvailable() ? Ansi.GREEN + "Yes" : Ansi.RED + "No") + Ansi.RESET);
-            System.out.println("==============================================");
-            
-            if (selectedBook.getAvailable()) {
-                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Borrow Book");
-            } else {
-                System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " " + "\u001B[9mBorrow Book\u001B[0m" + " (Unavailable)");
-            }
-
-            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Remove from Favourites");
-            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
-            System.out.println("==============================================");
-            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
-
-            String input = scanner.nextLine().trim();
-
-            switch (input) {
-                case "1":
-                    if (!selectedBook.getAvailable()) {
-                        System.out.println(Ansi.RED + "This book is currently borrowed and unavailable." + Ansi.RESET);
-
-                        break;
-                    }
-
-                    if (ConsoleUtils.confirmAction("Borrow book?")) {
-                        stayInMenu = false;
-                        loop = false;
-                        borrowBook(selectedBook);
-                        break;
-                    } else {
-                        System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
-                        stayInMenu = true;
-                        loop = true;
-                        break;
-                    }
-
-
-                case "2":
-                        stayInMenu = false;
-                        loop = false;
-                        removeFromFavorites(selectedBook);
-                        break;
-
-                case "0":
-                    loop = false;
-                    System.out.println(Ansi.ORANGE + "Returning to book list..." + Ansi.RESET);
-                    break;
-
-                default:
-                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
-            }
-        }
-
-        if(stayInMenu){
-            return false;
-        }
-        else{
-            return true;
-        }
-    }
-
-    private void borrowBook(Book book) {
-        int days = 0;
-
-        while (true) {
-            System.out.println("\n==============================================");
-            System.out.println(Ansi.ORANGE + "\nA fee of RM1.00 will be charged for each day a book is overdue.\n" + Ansi.RESET);
-            System.out.println(Ansi.BOLD + "Choose Borrow Duration" + Ansi.RESET);
-            System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " 7 days");
-            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " 14 days");
-            System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " 30 days");
-            System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Cancel");
-            System.out.println("==============================================");
-            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
-
-            String input = scanner.nextLine().trim();
-
-            // Check for blank input
-            if (input.isEmpty()) {
-                System.out.println(Ansi.RED + "Input cannot be empty. Please enter a number (0–3)." + Ansi.RESET);
-                continue;
-            }
-
-            // Check if numeric
-            if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter only numbers (0–3)." + Ansi.RESET);
-                continue;
-            }
-
-            switch (input) {
-                case "1":
-                    days = 7;
-                    break;
-                case "2":
-                    days = 14;
-                    break;
-                case "3":
-                    days = 30;
-                    break;
-                case "0":
-                    System.out.println(Ansi.ORANGE + "Borrowing cancelled." + Ansi.RESET);
-                    return;
-                default:
-                    System.out.println(Ansi.RED + "Invalid option. Please choose between 0–3." + Ansi.RESET);
-                    continue;
-            }
-
-            break;
-        }
+    private void borrowBook(Book book, int days) {
+        
 
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH, days);
@@ -592,17 +581,17 @@ public class ManageBooks {
 
 
     
-
+    String searchQuery = "";
+    HashMap<String, String> activeFilters = new HashMap<>();
+    ArrayList<Book> filteredBooks = new ArrayList<>();
     
     //handle searching and filtering of books
     public ArrayList<Book> searchFilterMenu(ArrayList<Book> books) {
 
-        //initialize filtered books as all books
-        ArrayList<Book> filteredBooks = new ArrayList<>(books);
+        if(filteredBooks.isEmpty()){
+            filteredBooks = new ArrayList<>(books);
+        }
 
-        //initialize search query and active filters
-        String searchQuery = "";
-        HashMap<String, String> activeFilters = new HashMap<>();
 
         //loop until user decides to exit
         while (true) {
@@ -646,7 +635,10 @@ public class ManageBooks {
                 }
                 
             }
-            System.out.println("\n   -> Narrow results by author, year, or genre.\n");
+            System.out.println("\n   -> Narrow results by author, year, or genre.");
+
+            System.out.print(Ansi.ORANGE + "0." + Ansi.RESET + " Go back");
+            System.out.println("\n   -> go back to main menu.\n");
 
             
 
@@ -824,6 +816,11 @@ public class ManageBooks {
 
                 break;
 
+                case "0":
+                    searchQuery = "";
+                    activeFilters = new HashMap<>();
+                    return filteredBooks = new ArrayList<>();
+
                 case "":
                     if(filteredBooks.size() > 0){
                         return filteredBooks;
@@ -952,11 +949,7 @@ public class ManageBooks {
 
     // Remove a book by index 
     public void removeBook() {
-        System.out.println("==============================================\n");
-        printLibrarianTable(false); // shows index column
-        System.out.println("\n" + Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
-        System.out.println("==============================================");
-
+        String input;
         ArrayList<Book> books = getAllBooks();
 
         if (books == null || books.isEmpty()) {
@@ -964,8 +957,22 @@ public class ManageBooks {
             return;
         }
 
-        System.out.print(Ansi.YELLOW + "Enter the book index to remove: " + Ansi.RESET);
-        String input = scanner.nextLine().trim();
+        while(true){
+            System.out.println("==============================================\n");
+            displayTable(false); // shows index column
+            System.out.println("\n" + Ansi.RED + "Press 'F' to filter again, or '0' to exit" + Ansi.RESET);
+            System.out.println("==============================================");
+
+            System.out.print(Ansi.YELLOW + "Enter the book index to remove: " + Ansi.RESET);
+            input = scanner.nextLine().trim();
+
+            if(input.toLowerCase().equals("f")){
+                continue;
+            }
+            
+            break;
+        }
+        
 
         if (input.equals("0")) {
             System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
@@ -1005,10 +1012,7 @@ public class ManageBooks {
 
     // Edit a book's details
     public void editBook() {
-        printLibrarianTable(false);
-        System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
-        System.out.println("==============================================");
-
+        String input;
         ArrayList<Book> books = getAllBooks();
 
         if (books == null || books.isEmpty()) {
@@ -1016,8 +1020,21 @@ public class ManageBooks {
             return;
         }
 
-        System.out.print(Ansi.YELLOW + "Enter the book index to edit: " + Ansi.RESET);
-        String input = scanner.nextLine().trim();
+        while(true){
+            System.out.println("==============================================\n");
+            displayTable(false); // shows index column
+            System.out.println("\n" + Ansi.RED + "Press 'F' to filter again, or '0' to exit" + Ansi.RESET);
+            System.out.println("==============================================");
+
+            System.out.print(Ansi.YELLOW + "Enter the book index to edit: " + Ansi.RESET);
+            input = scanner.nextLine().trim();
+
+            if(input.toLowerCase().equals("f")){
+                continue;
+            }
+            
+            break;
+        }
 
         if (input.equals("0")) {
             System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);

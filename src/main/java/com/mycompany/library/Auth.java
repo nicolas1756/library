@@ -10,6 +10,7 @@ import java.util.HashMap;
 public class Auth {
     
     
+    //initialise required components
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
     
@@ -26,12 +27,21 @@ public class Auth {
     public void setCurrentUser(User newUser) {
         this.currentUser = newUser;
     }
-    
+
+    //check if logged in
     public boolean isLoggedIn() {
         return currentUser != null;
     }
+
+    public boolean isAdmin(){
+        if(currentUser.getRole().equals("Librarian")){
+            return true;
+        }
+
+        return false;
+    }
     
-    public void authMenu(){
+    public void authMenu(){ //handles login and registering
        
         //loops until a valid option in given
         while(true){
@@ -41,7 +51,7 @@ public class Auth {
             System.out.println("==============================================");
             System.out.print("Enter: ");
             
-            String menuOption = scanner.next();
+            String menuOption = scanner.next(); //get menu input
             
             switch(menuOption){
                 case "1": //routes to login page
@@ -60,7 +70,7 @@ public class Auth {
         
     }
     
-    public void logout(){
+    public void logout(){ //logout by clearing user
         currentUser = null;
     }
         
@@ -98,7 +108,7 @@ public class Auth {
             
             if (authenticate(username, password)) {
                 //if valid username and password
-        System.out.println("==============================================\n");
+                System.out.println("==============================================\n");
                 System.out.println(Ansi.ORANGE + "Login successful!" + Ansi.RESET);
                 System.out.println(Ansi.ORANGE + "Hello, " + (String) getCurrentUser().getFullName() + Ansi.RESET );
                 break;
@@ -137,27 +147,29 @@ public class Auth {
         System.out.println(Ansi.RED + "Enter 0 at any time to cancel" + Ansi.RESET);
         System.out.println("==============================================");
 
+        //clear left over line
         if (scanner.hasNextLine()) {
             scanner.nextLine();
         }
 
+
         while (true) {
             System.out.print("Enter your full name: ");
-            String fullName = scanner.nextLine().trim();
+            String fullName = scanner.nextLine().trim(); //get fullname
 
             if (fullName.equals("0")) {
                 authMenu();
                 return false;
             }
             
-            if (fullName.equals("")) {
+            if (fullName.equals("")) { //if fullname enpty
                 System.out.println(Ansi.RED + "Fullname can't be empty, please try again." + Ansi.RESET );
                 continue;
              }
 
             String username;
             while (true) {
-                System.out.print("Enter your username: ");
+                System.out.print("Enter your username: "); //get username
                 username = scanner.nextLine().trim();
 
                 if (username.equals("0")) {
@@ -211,9 +223,9 @@ public class Auth {
             }
 
 
-            User newUser = new Reader(username, password, fullName);
+            User newUser = new Reader(username, password, fullName); //create new reader an extention of user class
   
-            fileHandling.appendToFile("accounts.ser", newUser, User.class);
+            fileHandling.appendToFile("accounts.ser", newUser, User.class); //add new account to end of file
 
             System.out.println("\nAccount successfully created!");
             

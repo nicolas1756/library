@@ -46,7 +46,15 @@ public class ManageBorrowRecords {
         ArrayList<BorrowDetails> records = getAllRecordFromBooks();
         String username = auth.getCurrentUser().getUsername();
 
-        records.sort((a, b) -> a.getDueDate().compareTo(b.getDueDate()));
+        records.sort(
+            Comparator
+                .comparingInt((BorrowDetails b) -> switch (b.getStatus()) {
+                    case OVERDUE -> 0;
+                    case BORROWED -> 1;
+                    case RETURNED -> 2;
+                })
+                .thenComparing(BorrowDetails::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
+        );
 
 
         Iterator<BorrowDetails> record = records.iterator();  
@@ -60,9 +68,16 @@ public class ManageBorrowRecords {
 
         printTable(records, EnumSet.of(Column.INDEX, Column.TITLE, Column.DATEBORROWED, Column.DUEDATE, Column.DATERETURNED, Column.STATUS));
 
-        System.out.println(Ansi.ORANGE + "\nPlease approach a libarian to return a book" + Ansi.RESET);
-        System.out.println("Books can only be returned by library staff.");
-        System.out.println("Book returned overdue will result in a RM 1 charge for each day");
+        if(!records.isEmpty()){
+            System.out.println(Ansi.ORANGE + "\nPlease approach a libarian to return a book" + Ansi.RESET);
+            System.out.println("Books can only be returned by library staff.");
+            System.out.println("Book returned overdue will result in a RM 1 charge for each day");
+        }
+
+        System.out.println("==============================================");
+        System.out.println("Press Enter to continue...");
+        scanner.nextLine();
+
     }
 
     
@@ -71,59 +86,79 @@ public class ManageBorrowRecords {
 
 
         if (records.isEmpty()) {
-            System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
+            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
             return;
         }
 
-        ArrayList<BorrowDetails> filteredRecords = filterSearchBorrowRecords(records);
+        boolean filter = true;
 
         while (true) {
 
+            if(filter){
+                ArrayList<BorrowDetails> filteredRecords = filterSearchBorrowRecords(records);
+                filter = false;
+            }
+            
+
+
+
+            if (filteredRecords.isEmpty()) {
+                break;
+            }
 
             filteredRecords.sort(
                 Comparator
-                    // 1️⃣ Sort by status (custom order)
                     .comparingInt((BorrowDetails b) -> switch (b.getStatus()) {
                         case OVERDUE -> 0;
                         case BORROWED -> 1;
                         case RETURNED -> 2;
                     })
-                    // 2️⃣ Then by due date (earliest first)
                     .thenComparing(BorrowDetails::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
             );
 
-
-
-            // Print table with selected columns
-            printTable(filteredRecords, EnumSet.allOf(Column.class));
-
+            printTable(filteredRecords, EnumSet.of(
+                    Column.INDEX, Column.USERNAME, Column.TITLE,
+                    Column.BOOKID, Column.DATEBORROWED,
+                    Column.DUEDATE, Column.DATERETURNED, Column.STATUS
+            ));
 
             System.out.println("\nEnter a book index to view more options.");
-            System.out.println("(Press Enter to exit)");
+            System.out.println("Press 'F' to filter again, or '0' to exit");
             System.out.println("==============================================");
 
             String input = scanner.nextLine().trim();
 
-            // If user pressed Enter, exit
-            if (input.isEmpty()) break;
+            // Handle different input types
+            switch (input.toUpperCase()) {
+                case "":
+                    continue;
+                case "0":
+                    filteredRecords = new ArrayList<>();
+                    break; // Exit the method
+                    
+                case "F":
+                    filter = true;
+                    continue; // Go back to filter menu
+                    
+                default:
+                    // Validate numeric input for book selection
+                    if (!input.matches("\\d+")) {
+                        System.out.println(Ansi.RED + "Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit." + Ansi.RESET);
+                        continue;
+                    }
 
-            // Validate numeric input
-            if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
-                continue;
+                    int index = Integer.parseInt(input) - 1;
+                    if (index < 0 || index >= filteredRecords.size()) {
+                        System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                        continue;
+                    }
+
+                    // Valid book selected
+                    BorrowDetails selectedRecord = filteredRecords.get(index);
+                    selectRecord(selectedRecord);
+                    records = getAllRecordFromBooks();
+                    break;
             }
-
-            int index = Integer.parseInt(input) - 1;
-            if (index < 0 || index >= filteredRecords.size()) {
-                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
-                continue;
-            }
-
-            // Valid book selected
-            
-            BorrowDetails selectedRecord = filteredRecords.get(index);
-            selectRecord(selectedRecord);
-            records = getAllRecordFromBooks();
         }
         
     }
@@ -144,7 +179,6 @@ public class ManageBorrowRecords {
 
 
             System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Return book");
-            System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Remove record");
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
             System.out.println("==============================================");
             System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
@@ -201,34 +235,6 @@ public class ManageBorrowRecords {
                         fileHandling.overrideFile("books.ser", books);
                         System.out.println(Ansi.ORANGE + "\nBook has been marked as returned" + (daysOverdue > 0 ? " and payment recorded." : "." + Ansi.RESET));
                     }
-
-                    stayInMenu = false;
-                    loop = false;
-                    break;
-
-
-                case "2":
-                    String bookId = selectedRecord.getBookId();
-                    String borrowId = selectedRecord.getBorrowID();
-
-                    Iterator<Book> iterator = books.iterator();
-
-                    while (iterator.hasNext()) {
-                        Book book = iterator.next();
-
-                        if(book.getBookId().equals(bookId)){
-                                Iterator<BorrowDetails> recordIt = book.getBorrowDetails().iterator();
-
-                                while (recordIt.hasNext()) {
-                                    BorrowDetails record = recordIt.next();
-
-                                    if(record.getBorrowID().equals(borrowId)){
-                                        recordIt.remove();
-                                    }
-                                }
-                        }
-                    }
-
 
                     stayInMenu = false;
                     loop = false;
@@ -297,7 +303,7 @@ public class ManageBorrowRecords {
         INDEX, ID, USERNAME, TITLE, BOOKID, DATEBORROWED, DUEDATE, DATERETURNED, STATUS
     }
 
-    public static void printTable(ArrayList<BorrowDetails> records, EnumSet<Column> columns) {
+    public void printTable(ArrayList<BorrowDetails> records, EnumSet<Column> columns) {
 
         System.out.print("\n");
 
@@ -346,7 +352,7 @@ public class ManageBorrowRecords {
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());
                     case DATERETURNED -> formatDate(record.getDateReturned());
-                    case STATUS -> String.valueOf(record.getStatus());
+                    case STATUS -> String.valueOf(record.getStatus() + " ");
                 };
                 max = Math.max(max, value == null ? 0 : value.length());
             }
@@ -382,6 +388,15 @@ public class ManageBorrowRecords {
             StringBuilder row = new StringBuilder(VSEP + " ");
             for (Column col : columns) {
 
+                String status;
+
+                if(record.getStatus() == BorrowStatus.BORROWED && record.getUsername().equals(auth.getCurrentUser().getUsername())){
+                    status = String.valueOf(record.getStatus()) + "*";
+                }
+                else{
+                    status = String.valueOf(record.getStatus());
+                }
+
                 int width = colWidths.get(col);
                 String value = switch (col) {
                     case INDEX -> String.valueOf(i);
@@ -392,7 +407,7 @@ public class ManageBorrowRecords {
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());
                     case DATERETURNED -> record.getDateReturned() == null ? "-" : formatDate(record.getDateReturned());
-                    case STATUS -> String.valueOf(record.getStatus());
+                    case STATUS -> String.valueOf(status);
                 };
 
                 String displayValue = value == null ? "" : value;
@@ -416,11 +431,21 @@ public class ManageBorrowRecords {
         }
 
         System.out.println(bottom);
+
+        if(!auth.isAdmin()){
+            System.out.println("\n* Already Borrowing");
+        }
     }
+
+    String searchQuery = "";
+    HashMap<String, String> activeFilters = new HashMap<>();
+    ArrayList<BorrowDetails> filteredRecords = new ArrayList<>();
 
     public ArrayList<BorrowDetails> filterSearchBorrowRecords(ArrayList<BorrowDetails> records) {
 
-        ArrayList<BorrowDetails> filteredRecords = new ArrayList<>(records);
+        if(filteredRecords.isEmpty()){
+            filteredRecords = new ArrayList<>(records);
+        }
 
         filteredRecords.sort(
             Comparator
@@ -432,11 +457,8 @@ public class ManageBorrowRecords {
                 .thenComparing(BorrowDetails::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
         );
 
-        String searchQuery = "";
-        HashMap<String, String> activeFilters = new HashMap<>();
-
         while (true) {
-            System.out.println("============== Borrow Records Filter & Search ==============");
+            System.out.println("\n=============== Filter & Search ==============");
 
             // Print results
             printTable(filteredRecords, EnumSet.of(
@@ -477,7 +499,10 @@ public class ManageBorrowRecords {
 
                 }
             }
-            System.out.println("\n   -> Filter by status or due date range.\n");
+            System.out.println("\n   -> Filter by status or due date range.");
+
+            System.out.print(Ansi.ORANGE + "0." + Ansi.RESET + " Go back");
+            System.out.println("\n   -> go back to main menu.\n");
 
             System.out.print("Select option (1-3) or" + Ansi.ORANGE + " press Enter to continue" + Ansi.RESET + ": ");
             String choice = scanner.nextLine().trim();
@@ -487,26 +512,20 @@ public class ManageBorrowRecords {
                     filteredRecords = new ArrayList<>(records);
                     searchQuery = "";
                     activeFilters.clear();
-                    System.out.println("Filters cleared.");
+                    System.out.println(Ansi.GREEN + "Filters cleared." + Ansi.RESET);
                 }
 
                 case "2" -> {
                     System.out.print("\nEnter search keyword (title/username/book ID): ");
                     searchQuery = scanner.nextLine().trim().toLowerCase();
 
-                    filteredRecords = new ArrayList<>();
-                    for (BorrowDetails r : records) {
-                        if (bookName.get(r.getBookId()).toLowerCase().contains(searchQuery)
-                                || r.getUsername().toLowerCase().contains(searchQuery)
-                                || r.getBookId().toLowerCase().contains(searchQuery)) {
-                            filteredRecords.add(r);
-                        }
-                    }
+                    // Reapply all filters with new search
+                    filteredRecords = applyAllFilters(records);
 
                     if (filteredRecords.isEmpty()) {
                         System.out.println(Ansi.YELLOW + "No results found for: " + searchQuery + Ansi.RESET);
                     } else {
-                        System.out.println(filteredRecords.size() + " result(s) found.");
+                        System.out.println(Ansi.GREEN + filteredRecords.size() + " result(s) found." + Ansi.RESET);
                     }
                 }
 
@@ -527,15 +546,14 @@ public class ManageBorrowRecords {
                                 System.out.println(Ansi.ORANGE + "1. " + Ansi.RESET + "Borrowed");
                                 System.out.println(Ansi.ORANGE + "2. " + Ansi.RESET + "Returned");
                                 System.out.println(Ansi.ORANGE + "3. " + Ansi.RESET + "Overdue");
+                                System.out.println(Ansi.ORANGE + "0. " + Ansi.RESET + "Clear status filter");
                                 
-                                System.out.print("Enter status:");
+                                System.out.print("Enter status: ");
                                 String statusChoice = scanner.nextLine().trim();
-
 
                                 switch (statusChoice) {
                                     case "1":
                                         status = BorrowStatus.BORROWED;
-
                                         break;
 
                                     case "2":
@@ -545,22 +563,24 @@ public class ManageBorrowRecords {
                                     case "3":
                                         status = BorrowStatus.OVERDUE;
                                         break;
+
+                                    case "0":
+                                        activeFilters.remove("Status");
+                                        System.out.println(Ansi.GREEN + "Status filter cleared." + Ansi.RESET);
+                                        break;
                                 
                                     default:
-                                        System.out.print(Ansi.ORANGE + "Status filter not applied\n" + Ansi.RESET);
+                                        System.out.println(Ansi.ORANGE + "Status filter not applied" + Ansi.RESET);
                                         break;
                                 }
 
                                 break;
                             }
                             
-
-                            String statusString = (status != null) ? status.toString() : "";
-
-                            if (statusString.isEmpty()){
-                                activeFilters.remove("Status");
-                            } 
-                            else activeFilters.put("Status",  status.toString());
+                            if (status != null) {
+                                activeFilters.put("Status", status.toString());
+                                System.out.println(Ansi.GREEN + "Status filter applied: " + status + Ansi.RESET);
+                            }
                         }
 
                         case "2" -> {
@@ -620,82 +640,29 @@ public class ManageBorrowRecords {
                             }
                         }
 
-                            default -> System.out.println(Ansi.RED + "Invalid option." + Ansi.RESET);
+                        default -> System.out.println(Ansi.RED + "Invalid option." + Ansi.RESET);
                     }
 
-                    // === Reapply filters ===
-                    filteredRecords = new ArrayList<>(records);
-
-                    for (var entry : activeFilters.entrySet()) {
-                        String key = entry.getKey();
-                        String value = entry.getValue();
-
-                        switch (key) {
-                            case "Status" -> filteredRecords.removeIf(r -> !r.getStatus().toString().equals(value));
-                            case "DueRange" -> {
-                                try {
-                                    
-                                    String[] parts = value.split(",");
-
-
-                                    if (parts.length != 2) {
-                                        System.out.println(Ansi.RED + "Invalid date range format." + Ansi.RESET);
-                                        break;
-                                    }
-                                    
-
-                                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
-                                    
-                                    LocalDate startDate = parts[0].isEmpty() ? null : LocalDate.parse(parts[0], formatter);
-                                    LocalDate endDate = parts[1].isEmpty() ? null : LocalDate.parse(parts[1], formatter);
-                                    
-
-
-                                    filteredRecords.removeIf(r -> {
-                                        if (r.getDueDate() == null) return true; // Remove records with null due dates
-                                        
-                                        LocalDate due = r.getDueDate().toInstant()
-                                            .atZone(ZoneId.systemDefault())
-                                            .toLocalDate();
-                                        
-                                        // Check start date constraint (if provided)
-                                        if (startDate != null && due.isBefore(startDate)) {
-                                            return true;
-                                        }
-                                        
-                                        // Check end date constraint (if provided)
-                                        if (endDate != null && due.isAfter(endDate)) {
-                                            return true;
-                                        }
-                                        
-                                        return false; // Keep the record
-                                    });
-
-                                    
-                                    
-                                    
-                                } catch (DateTimeParseException e) {
-                                    System.out.println(Ansi.RED + "Error parsing date range filter. Filter skipped." + Ansi.RESET);
-                                } catch (Exception e) {
-                                    System.out.println(Ansi.RED + "Error applying due date range filter." + Ansi.RESET);
-                                }
-                            }
-                        }
-                    }
-
+                    // === Reapply ALL filters (including search) ===
+                    filteredRecords = applyAllFilters(records);
                     
-
-                    // sort nicely after filtering (status, then due date)
+                    // Sort nicely after filtering
                     filteredRecords.sort(
                         Comparator
                             .comparingInt((BorrowDetails b) -> switch (b.getStatus()) {
-                                case BorrowStatus.OVERDUE -> 0;
-                                case BorrowStatus.BORROWED -> 1;
-                                case BorrowStatus.RETURNED -> 2;
+                                case OVERDUE -> 0;
+                                case BORROWED -> 1;
+                                case RETURNED -> 2;
                                 default -> 3;
                             })
-                            .thenComparing(BorrowDetails::getDueDate)
+                            .thenComparing(BorrowDetails::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
                     );
+                }
+
+                case "0" -> {
+                    searchQuery = "";
+                    activeFilters.clear();
+                    return new ArrayList<>();
                 }
 
                 case "" -> {
@@ -708,8 +675,78 @@ public class ManageBorrowRecords {
 
                 default -> System.out.println(Ansi.RED + "Invalid choice." + Ansi.RESET);
             }
+            
         }
     }
+
+    private ArrayList<BorrowDetails> applyAllFilters(ArrayList<BorrowDetails> records) {
+        ArrayList<BorrowDetails> result = new ArrayList<>(records);
+        
+        if (!searchQuery.isEmpty()) {
+            result.removeIf(r -> {
+                String title = bookName.get(r.getBookId());
+                if (title == null) return true;
+                
+                return !title.toLowerCase().contains(searchQuery)
+                    && !r.getUsername().toLowerCase().contains(searchQuery)
+                    && !r.getBookId().toLowerCase().contains(searchQuery);
+            });
+        }
+        
+        for (var entry : activeFilters.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            switch (key) {
+                case "Status" -> {
+                    result.removeIf(r -> !r.getStatus().toString().equals(value));
+                }
+                
+                case "DueRange" -> {
+                    try {
+                        String[] parts = value.trim().split(",", -1);
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
+
+                        final LocalDate startDate = (parts.length > 0 && !parts[0].isBlank())
+                            ? LocalDate.parse(parts[0].trim(), formatter)
+                            : null;
+
+                        final LocalDate endDate = (parts.length > 1 && !parts[1].isBlank())
+                            ? LocalDate.parse(parts[1].trim(), formatter)
+                            : null;
+
+                        result.removeIf(r -> {
+                            if (r.getDueDate() == null) return true;
+
+                            LocalDate due = r.getDueDate()
+                                .toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate();
+
+                            if (startDate != null && due.isBefore(startDate)) {
+                                return true;
+                            }
+
+                            if (endDate != null && due.isAfter(endDate)) {
+                                return true;
+                            }
+
+                            return false;
+                        });
+
+                    } catch (DateTimeParseException e) {
+                        System.out.println(Ansi.RED + "Error parsing date range filter. Expected format: dd/MM/yy[,dd/MM/yy]" + Ansi.RESET);
+                    } catch (Exception e) {
+                        System.out.println(Ansi.RED + "Error applying due date range filter: " + e.getMessage() + Ansi.RESET);
+                    }
+                }
+            }
+        }
+        
+        return result;
+    }
+
+
 
 
     // Helper method to format dates

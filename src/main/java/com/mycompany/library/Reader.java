@@ -44,7 +44,7 @@ public class Reader extends User {
         switch (input) {
             case "1":
                 System.out.println(Ansi.ORANGE + "Loading the library's collection..." + Ansi.RESET);
-                manageBooks.printReaderTable(true);
+                manageBooks.displayTable(true);
                 break;
 
             case "2":

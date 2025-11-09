@@ -24,6 +24,7 @@ public class Librarian extends User {
     public void displayMainMenu(Auth auth) {
         ManageBooks manageBooks = new ManageBooks();
         ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
+        manageBorrowRecords.setAuth(auth);
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("\n====================" + Ansi.BOLD + " Menu " + Ansi.RESET +"====================");
@@ -101,7 +102,7 @@ public class Librarian extends User {
 
                 case "4":
                     System.out.println(Ansi.ORANGE + "Printing table..." + Ansi.RESET + "\n");
-                    manageBooks.printLibrarianTable(true);
+                    manageBooks.displayTable(true);
                     break;
 
                 case "0":

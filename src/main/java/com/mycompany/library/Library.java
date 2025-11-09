@@ -30,10 +30,12 @@ public class Library { //main class where the program executes from
         System.out.println(Ansi.BLUE + "Password: admin123" + Ansi.RESET);
 
         while (true) {
+            
             if (!auth.isLoggedIn()) {
-                auth.authMenu(); // login/register
-            } else {
-                
+                // login/register menu
+                auth.authMenu(); 
+            } else {    
+                // Main menu after logging in
                 auth.getCurrentUser().displayMainMenu(auth);
             }
         }
