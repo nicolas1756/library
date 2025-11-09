@@ -3,6 +3,9 @@ package com.mycompany.library;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -12,27 +15,25 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
 
 import com.mycompany.library.BorrowDetails.BorrowStatus;
 
 public class ManageBorrowRecords {
-// Initialize necessary components
+    // Initialize necessary components
     Scanner scanner = new Scanner(System.in);
     FileHandling fileHandling = new FileHandling();
     ManageBooks manageBooks = new ManageBooks();
-    consoleUtil ConsoleUtils = new consoleUtil();
+    consoleUtil consoleUtils = new consoleUtil();
     
     static HashMap<String, String> bookName = new HashMap<String,String>();
     
     private Auth auth;
-
     Double overdueFee = 1.0;
+    
+    // Instance variables for filter/search state
+    String searchQuery = "";
+    HashMap<String, String> activeFilters = new HashMap<>();
+    ArrayList<BorrowDetails> filteredRecords = new ArrayList<>();
 
     public void setAuth(Auth auth) {
         this.auth = auth;
@@ -84,23 +85,20 @@ public class ManageBorrowRecords {
     public void getAllBorrowDetails() {
         ArrayList<BorrowDetails> records = getAllRecordFromBooks();
 
-
         if (records.isEmpty()) {
             System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
             return;
         }
 
         boolean filter = true;
+        filteredRecords = new ArrayList<>();
 
         while (true) {
 
             if(filter){
-                ArrayList<BorrowDetails> filteredRecords = filterSearchBorrowRecords(records);
+                filteredRecords = filterSearchBorrowRecords(records);
                 filter = false;
             }
-            
-
-
 
             if (filteredRecords.isEmpty()) {
                 break;
@@ -200,15 +198,15 @@ public class ManageBorrowRecords {
                             System.out.printf("The total fee is: RM %.2f%n", totalFee);
                             System.out.println("\n================================");
 
-                            if (!consoleUtil.confirmAction("Has payment been accepted?")) {
-                                break; // Exit if payment not confirmed
+                            if (!consoleUtils.confirmAction("Has payment been accepted?")) {
+                                break;
                             }
                         } else {
                             // On-time return
                             System.out.println("This book is being returned on time.");
                             System.out.println("\n================================");
                             
-                            if (!consoleUtil.confirmAction("Confirm return?")) {
+                            if (!consoleUtils.confirmAction("Confirm return?")) {
                                 break;
                             }
                         }
@@ -312,7 +310,7 @@ public class ManageBorrowRecords {
             return;
         }
 
-        boolean supportsUnicode = consoleUtil.detectUnicodeSupport();
+        boolean supportsUnicode = consoleUtils.detectUnicodeSupport();
 
         final String TL = supportsUnicode ? "╔" : "+";
         final String TR = supportsUnicode ? "╗" : "+";
@@ -347,7 +345,7 @@ public class ManageBorrowRecords {
                     case INDEX -> String.valueOf(records.indexOf(record) + 1);
                     case ID -> String.valueOf(record.getBorrowID());
                     case USERNAME -> record.getUsername();
-                    case TITLE -> bookName.get(record.getBookId());
+                    case TITLE -> consoleUtils.truncateString(bookName.get(record.getBookId()), 30);
                     case BOOKID -> record.getBookId();
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());
@@ -402,7 +400,7 @@ public class ManageBorrowRecords {
                     case INDEX -> String.valueOf(i);
                     case ID -> String.valueOf(record.getBorrowID());
                     case USERNAME -> record.getUsername();
-                    case TITLE -> consoleUtil.truncateString(bookName.get(record.getBookId()), 30);
+                    case TITLE -> consoleUtils.truncateString(bookName.get(record.getBookId()), 30);
                     case BOOKID -> record.getBookId();
                     case DATEBORROWED -> formatDate(record.getDateBorrowed());
                     case DUEDATE -> formatDate(record.getDueDate());
@@ -436,10 +434,6 @@ public class ManageBorrowRecords {
             System.out.println("\n* Already Borrowing");
         }
     }
-
-    String searchQuery = "";
-    HashMap<String, String> activeFilters = new HashMap<>();
-    ArrayList<BorrowDetails> filteredRecords = new ArrayList<>();
 
     public ArrayList<BorrowDetails> filterSearchBorrowRecords(ArrayList<BorrowDetails> records) {
 

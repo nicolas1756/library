@@ -445,23 +445,24 @@ public class ManageBooks {
 
 
     public void getFavourites(ArrayList<String> favoriteBooks) {
-        ArrayList<Book> books = getAllBooks();
-        Iterator<Book> bookIt = books.iterator();  
-        while (bookIt.hasNext()) {
-            Book book = bookIt.next();
-            if (!favoriteBooks.contains(book.getBookId())) {
-                bookIt.remove();
-            }
-        }
-
-        ArrayList<Book> filteredBooks = books;
-
-        if (filteredBooks.isEmpty()) {
-            System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
-            return;
-        }
-
         while (true) {
+            ArrayList<Book> books = getAllBooks();
+            Iterator<Book> bookIt = books.iterator();  
+            while (bookIt.hasNext()) {
+                Book book = bookIt.next();
+                if (!favoriteBooks.contains(book.getBookId())) {
+                    bookIt.remove();
+                }
+            }
+
+            ArrayList<Book> filteredBooks = books;
+
+            if (filteredBooks.isEmpty()) {
+                System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
+                return;
+            }
+
+        
             filteredBooks.sort((a, b) -> Boolean.compare(!a.getAvailable(), !b.getAvailable()));
 
             // Print table with selected columns
