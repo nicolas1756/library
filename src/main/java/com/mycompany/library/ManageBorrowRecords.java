@@ -212,6 +212,7 @@ public class ManageBorrowRecords {
                     fileHandling.overrideFile(BOOKS_FILE, books);
                     System.out.println(Ansi.ORANGE + "\nBook has been marked as returned" + (daysOverdue > 0 ? " and payment recorded." : "." + Ansi.RESET));
 
+                    filteredRecords.clear();
                     stayInMenu = false;
                     loop = false;
                     break;

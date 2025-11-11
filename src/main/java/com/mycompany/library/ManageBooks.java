@@ -156,10 +156,10 @@ public class ManageBooks {
 
                     // Valid book selected
                     if(selectorMenu(books, index)){
-                        loop = true;
+                        loop = false;
                     }
                     else{
-                        loop = false;
+                        loop = true;
                     }
             }     
         }   
@@ -223,6 +223,7 @@ public class ManageBooks {
             switch (input) {
                 case "1":
                     if(handleBorrowBook(selectedBook, alreadyBorrowing)){
+                        filteredBooks.clear();
                         stayInMenu = false;
                         loop = false;
                     }
@@ -786,35 +787,58 @@ public class ManageBooks {
         System.out.println("=================" + Ansi.BOLD + " Add a Book " + Ansi.RESET + "=================");
         System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
         System.out.println("==============================================");
-
-        String title = promptInput("Enter book title: ", "Title");
-        if (title == null) return;
-
-        String author = promptInput("Enter author name: ", "Author");
-        if (author == null) return;
-
-        String year = promptValidatedYear();
-        if (year == null) return;
-
-        String description = promptInput("Enter book description: ", "Description");
-        if (description == null) return;
-
-        String genreInput = promptInput("Enter book genre (comma-separated for multiple): ", "Genre");
-        if (genreInput == null) return;
-
-        ArrayList<String> genres = parseGenres(genreInput);
-        if (genres.isEmpty()) {
-            System.out.println(Ansi.RED + "At least one valid genre is required!" + Ansi.RESET);
-            return;
-        }
-
-        Book newBook = new Book(title, author, year, description, genres, true);
-        fileHandling.appendToFile(BOOKS_FILE, newBook, Book.class);
         
-        System.out.println("==============================================");
-        System.out.println(Ansi.GREEN + "\"" + newBook.getTitle() + "\" successfully added!" + Ansi.RESET);
-        System.out.println("Book ID: " + Ansi.CYAN + newBook.getBookId() + Ansi.RESET);
-        System.out.println("==============================================");
+        String title = null;
+        String author = null;
+        String year = null;
+        String description = null;
+        ArrayList<String> genres = null;
+        
+        int index = 0;
+
+        while(true) {
+            switch (index) {
+                case 0:
+                    title = promptInput("Enter book title: ", "Title");
+                    if (title == null) return;
+                    break;
+                case 1:
+                    author = promptInput("Enter author name: ", "Author");
+                    if (author == null) index -= 2;
+                    break;
+                case 2:
+                    year = promptValidatedYear();
+                    if (year == null) index -= 2;
+                    break;
+                case 3:
+                    description = promptInput("Enter book description: ", "Description");
+                    if (description == null) index -= 2;
+                    break;
+                case 4:
+                    String genreInput = promptInput("Enter book genre (comma-separated for multiple): ", "Genre");
+                    if (genreInput == null){
+                        index -= 2; 
+                        break;
+                    } 
+
+                    genres = parseGenres(genreInput);
+                    if (genres.isEmpty()) {
+                        System.out.println(Ansi.RED + "At least one valid genre is required!" + Ansi.RESET);
+                        return;
+                    }
+                    break;
+                default:
+                    // Now all variables are accessible here
+                    Book newBook = new Book(title, author, year, description, genres, true);
+                    fileHandling.appendToFile(BOOKS_FILE, newBook, Book.class);
+                    
+                    System.out.println("==============================================");
+                    System.out.println(Ansi.GREEN  + newBook + "\nsuccessfully added!");
+                    System.out.println("==============================================" + Ansi.RESET);
+                    return; // Exit after adding the book
+            }
+            index++;
+        }
     }
 
     /**
@@ -927,6 +951,9 @@ public class ManageBooks {
             books.remove(index);
             fileHandling.overrideFile(BOOKS_FILE, books);
             System.out.println(Ansi.ORANGE + "Book \"" + selectedBook.getTitle() + "\" (ID: " + selectedBook.getBookId() + ") has been removed." + Ansi.RESET);
+            
+            // Clear filtered books to force refresh
+            filteredBooks.clear();
         } else {
             System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
         }
@@ -958,6 +985,8 @@ public class ManageBooks {
         System.out.println(Ansi.ORANGE + "Editing Book: " + book.getTitle() + " (ID: " + book.getBookId() + ")" + Ansi.RESET);
 
         editBookMenu(book, books);
+        
+        filteredBooks.clear();
     }
 
     /**
