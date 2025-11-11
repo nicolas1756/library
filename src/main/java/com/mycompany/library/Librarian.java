@@ -32,6 +32,8 @@ public class Librarian extends User {
         System.out.println("   -> Add/remove/edit/view the collection of books.");
         System.out.println(Ansi.ORANGE + "2." + Ansi.RESET + " Manage Borrow Records");
         System.out.println("   -> View record of borrowed books and manage book returning.");
+        System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " Generate Report");
+        System.out.println("   -> Generate library usage report.");
         System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Logout");
         System.out.println("   -> Exit your account.");
         System.out.println("==============================================\n");
@@ -49,6 +51,14 @@ public class Librarian extends User {
             case "2":
                 System.out.println(Ansi.ORANGE + "Fetching borrow records..." + Ansi.RESET);
                 manageBorrowRecords.getAllBorrowDetails();
+                break;
+
+            case "3":
+                System.out.println(Ansi.ORANGE + "Generating report..." + Ansi.RESET);
+                ManageReport report = new ManageReport();
+                report.setAuth(auth);
+                report.getValues();
+                report.generateReport();
                 break;
 
             case "0":

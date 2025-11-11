@@ -41,140 +41,6 @@ public class ManageBooks {
     }
 
 
-    //=================================================
-    //table printing methods
-    //=================================================
-
-    // Generic method to print table
-    public void printTable(ArrayList<Book> books, EnumSet<Column> columns) {
-        
-        // Handle empty book list
-        if (books == null || books.isEmpty()) {
-            System.out.println("\u001B[31mNo books available.\u001B[0m");
-            return;
-        }
-
-
-        // Detect Unicode support to decide border style
-        boolean supportsUnicode = consoleUtil.detectUnicodeSupport();
-
-        // Borders
-        final String TL = supportsUnicode ? "╔" : "+";
-        final String TR = supportsUnicode ? "╗" : "+";
-        final String BL = supportsUnicode ? "╚" : "+";
-        final String BR = supportsUnicode ? "╝" : "+";
-        final String TSEP = supportsUnicode ? "╦" : "+";
-        final String BSEP = supportsUnicode ? "╩" : "+";
-        final String HSEP = supportsUnicode ? "╠" : "+";
-        final String VSEP = supportsUnicode ? "║" : "|";
-        final String CROSS = supportsUnicode ? "╬" : "+";
-        final String HLINE = supportsUnicode ? "═" : "-";
-
-        // Define headers title
-        Map<Column, String> headers = Map.of(
-            Column.INDEX, "Index",
-            Column.ID, "Book ID",
-            Column.TITLE, "Title",
-            Column.AUTHOR, "Author",
-            Column.GENRE, "Genre",
-            Column.YEAR, "Year",
-            Column.LAST_EDITED, "Last Edited",
-            Column.AVAILABLE, "Available"
-        );
-
-        // calculate width needed for each column
-        Map<Column, Integer> colWidths = new HashMap<>();
-        for (Column col : columns) {
-            int max = headers.get(col).length();
-            for (Book book : books) {
-                String value = switch (col) {
-                    case INDEX -> String.valueOf(books.indexOf(book) + 1);
-                    case ID -> String.valueOf(book.getBookId());
-                    case TITLE -> truncateString(book.getTitle(), 30);
-                    case AUTHOR -> book.getAuthor();
-                    case GENRE -> book.getStringGenre();
-                    case YEAR -> String.valueOf(book.getYearPublished());
-                    case LAST_EDITED -> formatDate(book.getLastEdited());
-                    case AVAILABLE -> String.valueOf(book.getAvailable());
-                };
-                max = Math.max(max, value == null ? 0 : value.length());
-            }
-            colWidths.put(col, max + 2); // +2 padding
-        }
-
-        //Build the borders and header dynamically
-        StringBuilder top = new StringBuilder(TL);
-        StringBuilder header = new StringBuilder(VSEP + " ");
-        StringBuilder sep = new StringBuilder(HSEP);
-        StringBuilder bottom = new StringBuilder(BL);
-
-        for (Column col : columns) {
-            int width = colWidths.get(col);
-            top.append(HLINE.repeat(width)).append(TSEP);
-            header.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", headers.get(col)));
-            sep.append(HLINE.repeat(width)).append(CROSS);
-            bottom.append(HLINE.repeat(width)).append(BSEP);
-        }
-
-        // Fix last border characters
-        top.setCharAt(top.length() - 1, TR.charAt(0));
-        sep.setCharAt(sep.length() - 1, HSEP.equals("+") ? '+' : '╣');
-        bottom.setCharAt(bottom.length() - 1, BR.charAt(0));
-
-        //Print header
-        System.out.println(top);
-        System.out.println(header);
-        System.out.println(sep);
-
-        //Print rows
-        int i = 1;
-        for (Book book : books) {
-            StringBuilder row = new StringBuilder(VSEP + " ");
-
-            boolean isCurrentUserBorrowing = book.getBorrowDetails().stream()
-                .anyMatch(record -> record.getStatus() == BorrowStatus.BORROWED && 
-                        record.getUsername().equals(auth.getCurrentUser().getUsername()));
-
-            String available = isCurrentUserBorrowing ? book.getAvailable() + "*" : String.valueOf(book.getAvailable());
-
-            for (Column col : columns) {
-                int width = colWidths.get(col);
-                String value = switch (col) {
-                    case INDEX -> String.valueOf(i);
-                    case ID -> book.getBookId();
-                    case TITLE -> truncateString(book.getTitle(), 30);
-                    case AUTHOR -> book.getAuthor();
-                    case GENRE -> book.getStringGenre();
-                    case YEAR -> String.valueOf(book.getYearPublished());
-                    case LAST_EDITED -> formatDate(book.getLastEdited());
-                    case AVAILABLE -> String.valueOf(available);
-                };
-
-                String displayValue = (value == null) ? "" : value;
-                String paddedValue = String.format("%-" + (width - 1) + "s", displayValue);
-
-                // Apply color only to AVAILABLE column
-                if (col == Column.AVAILABLE) {
-                    String color = book.getAvailable() ? Ansi.GREEN : Ansi.ORANGE; // ORANGE not standard in ANSI
-                    paddedValue = color + paddedValue + Ansi.RESET;
-                }
-
-                row.append(paddedValue).append(VSEP).append(" ");
-            }
-            System.out.println(row);
-            i++;
-        }
-
-        //Print bottom border
-        System.out.println(bottom);
-
-        if(!auth.isAdmin()){
-            System.out.println("\n* Already Borrowing");
-        }
-
-
-    }
-
    // Handles printing the table of books
     public void displayTable(boolean promptSelect) {
         ArrayList<Book> books = getAllBooks();
@@ -199,14 +65,10 @@ public class ManageBooks {
             // Print table with selected columns
 
             if(auth.getCurrentUser().getRole() == "Librarian"){
-                printTable(filteredBooks, EnumSet.of(
-                    Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED, Column.AVAILABLE
-                ));
+                consoleUtil.printTable(filteredBooks, "books", auth);
             }
             else{
-                printTable(filteredBooks, EnumSet.of(
-                    Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
-                ));
+                consoleUtil.printTable(filteredBooks, "books", auth);
             }
 
             if (!promptSelect) break;
@@ -465,10 +327,7 @@ public class ManageBooks {
         
             filteredBooks.sort((a, b) -> Boolean.compare(!a.getAvailable(), !b.getAvailable()));
 
-            // Print table with selected columns
-            printTable(filteredBooks, EnumSet.of(
-                Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE
-            ));
+            consoleUtil.printTable(filteredBooks, "books", auth);
 
 
             System.out.println("\nEnter a book index to view more options.");
@@ -602,10 +461,10 @@ public class ManageBooks {
             String role = getAuth().getCurrentUser().getRole();
 
             if(role.equals("Librarian")){
-                printTable(filteredBooks, EnumSet.of(Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.LAST_EDITED, Column.AVAILABLE));
+                consoleUtil.printTable(filteredBooks, "books", auth);
             }
             else{
-                printTable(filteredBooks, EnumSet.of(Column.INDEX, Column.TITLE, Column.AUTHOR, Column.GENRE, Column.YEAR, Column.AVAILABLE));
+                consoleUtil.printTable(filteredBooks, "books", auth);
             };
 
             System.out.println("\nCurrent results: " + filteredBooks.size() + " book(s).\n");
@@ -1148,20 +1007,6 @@ public class ManageBooks {
     //=================================================
     //helper methods
     //=================================================
-
-    // Helper method to truncate long strings
-    private static String truncateString(String str, int length) {
-        if (str == null) return "";
-        if (str.length() <= length) return str;
-        return str.substring(0, length - 3) + "...";
-    }
-
-    // Helper method to format dates
-    private static String formatDate(Date date) {
-        if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yy");
-        return sdf.format(date);
-    }
 
     private static String formatDateTime(Date date) {
         if (date == null) return "";

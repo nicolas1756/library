@@ -4,13 +4,387 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
-public class consoleUtil {
-    private static final Scanner scanner = new Scanner(System.in);
-    FileHandling fileHandling = new FileHandling();
+import com.mycompany.library.BorrowDetails.BorrowStatus;
 
+public class consoleUtil {
+    
+    //================================================
+    // INSTANCE FIELDS
+    //================================================
+    private static final Scanner scanner = new Scanner(System.in);
+    private final FileHandling fileHandling = new FileHandling();
+    
+    // Static cache for book titles (shared across all instances)
+    private static HashMap<String, String> bookTitleCache = new HashMap<>();
+
+    //================================================
+    // ENUMS
+    //================================================
+    enum BookColumn {
+        INDEX, ID, TITLE, AUTHOR, GENRE, YEAR, LAST_EDITED, AVAILABLE
+    }
+
+    enum BorrowColumn {
+        INDEX, ID, USERNAME, TITLE, BOOKID, DATEBORROWED, DUEDATE, DATERETURNED, STATUS
+    }
+
+    enum ReportColumn {
+        BORROWED, RETURNED, OVERDUE, TOTALBOOKS, TOTALUSERS, TOTALBORROWS
+    }
+
+    //================================================
+    // BOOK TITLE CACHING
+    //================================================
+    
+    /**
+     * Loads book titles from file into cache for quick lookup
+     */
+    public static void loadBookTitle() {
+        FileHandling fileHandling = new FileHandling();
+        ArrayList<Book> books = fileHandling.readFromFile("books.ser", Book.class);
+
+        if (books == null || books.isEmpty()) {
+            return;
+        }
+
+        bookTitleCache.clear();
+        for (Book book : books) {
+            bookTitleCache.put(book.getBookId(), book.getTitle());
+        }
+    }
+
+    //================================================
+    // BORROW STATUS CHECK
+    //================================================
+    
+    /**
+     * Checks if a user currently has an active borrow for a specific book
+     * 
+     * @param book The book to check
+     * @param username The username to check against
+     * @return true if user has an active (BORROWED) record for this book
+     */
+    public static boolean hasActiveBorrow(Book book, String username) {
+        return book != null 
+            && username != null
+            && book.getBorrowDetails() != null
+            && book.getBorrowDetails().stream()
+                .anyMatch(record -> record.getUsername().equals(username) 
+                    && record.getStatus() == BorrowStatus.BORROWED);
+    }
+
+    /**
+     * Returns indicator string for display in table
+     * 
+     * @param book The book to check
+     * @param username The username to check against
+     * @return "*" if user has active borrow, empty string otherwise
+     */
+    private static String getActiveBorrowIndicator(Book book, String username) {
+        return hasActiveBorrow(book, username) ? "*" : "";
+    }
+
+    //================================================
+    // TABLE PRINTING
+    //================================================
+
+    /**
+     * Generic method to print formatted table for books, borrow records, or reports
+     */
+    public static void printTable(ArrayList<?> array, String type, Auth auth) {
+        loadBookTitle();
+        
+        EnumSet<?> columns = getColumnsForType(type);
+        Map<Enum<?>, String> headers = getHeadersForType(type, columns);
+        
+        // Handle empty item list
+        if (array == null || array.isEmpty()) {
+            System.out.println(Ansi.RED + "No items available." + Ansi.RESET);
+            return;
+        }
+
+        // Detect Unicode support to decide border style
+        boolean supportsUnicode = detectUnicodeSupport();
+
+        // Borders
+        final String TL = supportsUnicode ? "╔" : "+";
+        final String TR = supportsUnicode ? "╗" : "+";
+        final String BL = supportsUnicode ? "╚" : "+";
+        final String BR = supportsUnicode ? "╝" : "+";
+        final String TSEP = supportsUnicode ? "╦" : "+";
+        final String BSEP = supportsUnicode ? "╩" : "+";
+        final String HSEP = supportsUnicode ? "╠" : "+";
+        final String VSEP = supportsUnicode ? "║" : "|";
+        final String CROSS = supportsUnicode ? "╬" : "+";
+        final String HLINE = supportsUnicode ? "═" : "-";
+
+        // Calculate width needed for each column
+        Map<Enum<?>, Integer> colWidths = calculateColumnWidths(columns, headers, array, auth);
+
+        // Build the borders and header dynamically
+        String[] borders = buildTableBorders(columns, colWidths, TL, TR, BL, BR, TSEP, BSEP, HSEP, CROSS, HLINE);
+        String headerRow = buildHeaderRow(columns, headers, colWidths, VSEP);
+
+        // Print header
+        System.out.println(borders[0]); // top
+        System.out.println(headerRow);
+        System.out.println(borders[1]); // separator
+
+        // Print rows
+        printTableRows(array, type, columns, colWidths, VSEP, auth);
+
+        // Print bottom border
+        System.out.println(borders[2]); // bottom
+
+        // Print footnote for books view
+        if (type.equals("books") && auth != null && !auth.isAdmin()) {
+            System.out.println("\n* Already Borrowing");
+        }
+    }
+
+    private static EnumSet<?> getColumnsForType(String type) {
+        return switch (type) {
+            case "books" -> EnumSet.allOf(BookColumn.class);
+            case "borrow" -> EnumSet.allOf(BorrowColumn.class);
+            case "report" -> EnumSet.allOf(ReportColumn.class);
+            default -> EnumSet.allOf(BookColumn.class);
+        };
+    }
+
+    private static Map<Enum<?>, String> getHeadersForType(String type, EnumSet<?> columns) {
+        Map<Enum<?>, String> headers = new HashMap<>();
+        
+        for (Enum<?> col : columns) {
+            String header = switch (type) {
+                case "books" -> getBookColumnHeader((BookColumn) col);
+                case "borrow" -> getBorrowColumnHeader((BorrowColumn) col);
+                case "report" -> getReportColumnHeader((ReportColumn) col);
+                default -> getBookColumnHeader((BookColumn) col);
+            };
+            headers.put(col, header);
+        }
+        
+        return headers;
+    }
+
+    private static String getBookColumnHeader(BookColumn col) {
+        return switch (col) {
+            case INDEX -> "Index";
+            case ID -> "Book ID";
+            case TITLE -> "Title";
+            case AUTHOR -> "Author";
+            case GENRE -> "Genre";
+            case YEAR -> "Year";
+            case LAST_EDITED -> "Last Edited";
+            case AVAILABLE -> "Available";
+        };
+    }
+
+    private static String getBorrowColumnHeader(BorrowColumn col) {
+        return switch (col) {
+            case INDEX -> "Index";
+            case ID -> "Record ID";
+            case USERNAME -> "Username";
+            case TITLE -> "Title";
+            case BOOKID -> "Book ID";
+            case DATEBORROWED -> "Date Borrowed";
+            case DUEDATE -> "Due Date";
+            case DATERETURNED -> "Date Returned";
+            case STATUS -> "Status";
+        };
+    }
+
+    private static String getReportColumnHeader(ReportColumn col) {
+        return switch (col) {
+            case BORROWED -> "Borrowed";
+            case RETURNED -> "Returned";
+            case OVERDUE -> "Overdue";
+            case TOTALBOOKS -> "Total Books";
+            case TOTALUSERS -> "Total Users";
+            case TOTALBORROWS -> "Total Borrows";
+        };
+    }
+
+    private static Map<Enum<?>, Integer> calculateColumnWidths(EnumSet<?> columns, Map<Enum<?>, String> headers, 
+                                                         ArrayList<?> array, Auth auth) {
+        Map<Enum<?>, Integer> colWidths = new HashMap<>();
+        
+        for (Enum<?> col : columns) {
+            int max = headers.get(col).length();
+            int index = 1;
+            
+            for (Object item : array) {
+                String value = getColumnValue(col, item, index, auth);
+                max = Math.max(max, value == null ? 0 : value.length());
+                index++;
+            }
+            
+            colWidths.put(col, max + 2); // +2 for padding
+        }
+        
+        return colWidths;
+    }
+
+    private static String[] buildTableBorders(EnumSet<?> columns, Map<Enum<?>, Integer> colWidths,
+                                       String TL, String TR, String BL, String BR, 
+                                       String TSEP, String BSEP, String HSEP, 
+                                       String CROSS, String HLINE) {
+        StringBuilder top = new StringBuilder(TL);
+        StringBuilder sep = new StringBuilder(HSEP);
+        StringBuilder bottom = new StringBuilder(BL);
+
+        for (Enum<?> col : columns) {
+            int width = colWidths.get(col);
+            top.append(HLINE.repeat(width)).append(TSEP);
+            sep.append(HLINE.repeat(width)).append(CROSS);
+            bottom.append(HLINE.repeat(width)).append(BSEP);
+        }
+
+        // Fix last border characters
+        top.setCharAt(top.length() - 1, TR.charAt(0));
+        sep.setCharAt(sep.length() - 1, HSEP.equals("+") ? '+' : '╣');
+        bottom.setCharAt(bottom.length() - 1, BR.charAt(0));
+
+        return new String[]{top.toString(), sep.toString(), bottom.toString()};
+    }
+
+    private static String buildHeaderRow(EnumSet<?> columns, Map<Enum<?>, String> headers, 
+                                  Map<Enum<?>, Integer> colWidths, String VSEP) {
+        StringBuilder header = new StringBuilder(VSEP + " ");
+        
+        for (Enum<?> col : columns) {
+            int width = colWidths.get(col);
+            header.append(String.format("%-" + (width - 1) + "s" + VSEP + " ", headers.get(col)));
+        }
+        
+        return header.toString();
+    }
+
+    private static void printTableRows(ArrayList<?> array, String type, EnumSet<?> columns, 
+                                Map<Enum<?>, Integer> colWidths, String VSEP, Auth auth) {
+        int index = 1;
+        
+        for (Object item : array) {
+            StringBuilder row = new StringBuilder(VSEP + " ");
+
+            for (Enum<?> col : columns) {
+                int width = colWidths.get(col);
+                String value = getColumnValue(col, item, index, auth);
+                String displayValue = (value == null) ? "" : value;
+                String paddedValue = String.format("%-" + (width - 1) + "s", displayValue);
+
+                // Apply color based on column and type
+                paddedValue = applyColumnColor(type, col, item, paddedValue);
+
+                row.append(paddedValue).append(VSEP).append(" ");
+            }
+            
+            System.out.println(row);
+            index++;
+        }
+    }
+
+    private static String applyColumnColor(String type, Enum<?> col, Object item, String paddedValue) {
+        if (type.equals("books") && col.name().equals("AVAILABLE")) {
+            Book book = (Book) item;
+            String color = book.getAvailable() ? Ansi.GREEN : Ansi.ORANGE;
+            return color + paddedValue + Ansi.RESET;
+        } else if (type.equals("borrow") && col.name().equals("STATUS")) {
+            BorrowDetails record = (BorrowDetails) item;
+            String color = switch (record.getStatus()) {
+                case BORROWED -> Ansi.YELLOW;
+                case RETURNED -> Ansi.GREEN;
+                case OVERDUE -> Ansi.RED;
+                default -> Ansi.RESET;
+            };
+            return color + paddedValue + Ansi.RESET;
+        }
+        
+        return paddedValue;
+    }
+
+    //================================================
+    // COLUMN VALUE EXTRACTION
+    //================================================
+
+    private static String getColumnValue(Enum<?> col, Object item, int index, Auth auth) {
+        if (col instanceof BookColumn) {
+            return getBookColumnValue((BookColumn) col, item, index, auth);
+        } else if (col instanceof BorrowColumn) {
+            return getBorrowColumnValue((BorrowColumn) col, item, index);
+        } else if (col instanceof ReportColumn) {
+            return getReportColumnValue((ReportColumn) col, item);
+        }
+        return "";
+    }
+
+    private static String getBookColumnValue(BookColumn col, Object item, int index, Auth auth) {
+        if (!(item instanceof Book)) return "";
+        Book book = (Book) item;
+        
+        return switch (col) {
+            case INDEX -> String.valueOf(index);
+            case ID -> book.getBookId();
+            case TITLE -> truncateString(book.getTitle(), 30);
+            case AUTHOR -> book.getAuthor();
+            case GENRE -> book.getStringGenre();
+            case YEAR -> String.valueOf(book.getYearPublished());
+            case LAST_EDITED -> formatDate(book.getLastEdited());
+            case AVAILABLE -> {
+                String availability = String.valueOf(book.getAvailable());
+                if (auth != null && auth.getCurrentUser() != null) {
+                    availability += getActiveBorrowIndicator(book, auth.getCurrentUser().getUsername());
+                }
+                yield availability;
+            }
+        };
+    }
+
+    private static String getBorrowColumnValue(BorrowColumn col, Object item, int index) {
+        if (!(item instanceof BorrowDetails)) return "";
+        BorrowDetails record = (BorrowDetails) item;
+        
+        return switch (col) {
+            case INDEX -> String.valueOf(index);
+            case ID -> record.getBorrowID();
+            case USERNAME -> record.getUsername();
+            case TITLE -> bookTitleCache.getOrDefault(record.getBookId(), "Unknown Title");
+            case BOOKID -> record.getBookId();
+            case DATEBORROWED -> formatDate(record.getDateBorrowed());
+            case DUEDATE -> formatDate(record.getDueDate());
+            case DATERETURNED -> record.getDateReturned() != null ? formatDate(record.getDateReturned()) : "-";
+            case STATUS -> record.getStatus().toString();
+        };
+    }
+
+    private static String getReportColumnValue(ReportColumn col, Object item) {
+        if (!(item instanceof Report)) return "";
+        Report report = (Report) item;
+        
+        return switch (col) {
+            case TOTALBOOKS -> String.valueOf(report.getTotalBooks());
+            case TOTALUSERS -> String.valueOf(report.getTotalUsers());
+            case TOTALBORROWS -> String.valueOf(report.getTotalBorrows());
+            case BORROWED -> String.valueOf(report.getBorrowed());
+            case RETURNED -> String.valueOf(report.getReturned());
+            case OVERDUE -> String.valueOf(report.getOverdue());
+        };
+    }
+
+    //================================================
+    // UTILITY METHODS
+    //================================================
+
+    private static String formatDate(Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
+    }
 
     public static String truncateString(String str, int length) {
         if (str == null) return "";
@@ -35,18 +409,21 @@ public class consoleUtil {
         String term = System.getenv("TERM");
         String conEmu = System.getenv("ConEmuANSI");
         String wtSession = System.getenv("WT_SESSION");
-        String psModulePath = System.getenv("PSModulePath"); // PowerShell
+        String psModulePath = System.getenv("PSModulePath");
         String encoding = System.getProperty("sun.stdout.encoding", "UTF-8");
 
-        return (wtSession != null) || // Windows Terminal
-            (conEmu != null && conEmu.equalsIgnoreCase("ON")) || // ConEmu
-            (psModulePath != null && os.contains("win")) || // PowerShell
+        return (wtSession != null) || 
+            (conEmu != null && conEmu.equalsIgnoreCase("ON")) || 
+            (psModulePath != null && os.contains("win")) || 
             (term != null && (term.contains("xterm") || term.contains("ansi") || term.contains("vt100"))) ||
-            (encoding.toLowerCase().contains("utf")) || // UTF-8 encoding detected
-            (!os.contains("win")); // Assume true for macOS/Linux
+            (encoding.toLowerCase().contains("utf")) || 
+            (!os.contains("win"));
     }
 
-    //reload book.ser with sample books
+    //================================================
+    // SAMPLE DATA LOADER
+    //================================================
+
     public void loadBooks() {
         ArrayList<Book> books = new ArrayList<>();
         Random random = new Random();
@@ -54,7 +431,6 @@ public class consoleUtil {
         String[] sampleUsers = {
             "alice", "bob", "charlie", "diana", "eric", "fiona", "george"
         };
-
 
         Object[][] realBooks = {
             {"Harry Potter and the Sorcerer's Stone", "J.K. Rowling", "1997",
@@ -99,7 +475,7 @@ public class consoleUtil {
 
             {"The Da Vinci Code", "Dan Brown", "2003",
                 new String[]{"Thriller", "Mystery"},
-                "A symbologist uncovers secrets hidden in Leonardo da Vinci’s works while investigating a murder."},
+                "A symbologist uncovers secrets hidden in Leonardo da Vinci's works while investigating a murder."},
 
             {"The Hound of the Baskervilles", "Arthur Conan Doyle", "1902",
                 new String[]{"Mystery", "Detective"},
@@ -119,7 +495,7 @@ public class consoleUtil {
 
             {"To Kill a Mockingbird", "Harper Lee", "1960",
                 new String[]{"Classic", "Drama"},
-                "A young girl in the racially charged American South learns about justice and empathy through her father’s example."},
+                "A young girl in the racially charged American South learns about justice and empathy through her father's example."},
 
             {"The Catcher in the Rye", "J.D. Salinger", "1951",
                 new String[]{"Classic", "Coming-of-Age"},
@@ -233,16 +609,14 @@ public class consoleUtil {
             Book book = new Book(title, author, year, description, genres, true);
 
             // 30% chance the book is borrowed
-            if (random.nextDouble() < 0.3) { // 30% chance this book is borrowed
+            if (random.nextDouble() < 0.3) {
                 String username = sampleUsers[random.nextInt(sampleUsers.length)];
                 Calendar cal = Calendar.getInstance();
 
-                // 20% of these borrowed books will be overdue
+                // 20% of borrowed books will be overdue
                 if (random.nextDouble() < 0.2) {
-                    // overdue: due date 1–14 days ago
                     cal.add(Calendar.DATE, -1 * (1 + random.nextInt(14)));
                 } else {
-                    // normal: due date 7–21 days in the future
                     cal.add(Calendar.DATE, 7 + random.nextInt(14));
                 }
 
@@ -253,13 +627,9 @@ public class consoleUtil {
                 book.addBorrowRecord(record);
             }
 
-
             books.add(book);
         }
 
         fileHandling.overrideFile("books.ser", books);
     }
-
-
-
 }
