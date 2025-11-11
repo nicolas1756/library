@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Scanner;
 
-import com.mycompany.library.ManageBooks.Column;
 /**
  *
  * @author nic

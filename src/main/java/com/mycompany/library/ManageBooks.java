@@ -20,26 +20,50 @@ import java.util.Random;
 
 public class ManageBooks {
 
-    // Initialize necessary components
-    Scanner scanner = new Scanner(System.in);
-    FileHandling fileHandling = new FileHandling();
-    consoleUtil ConsoleUtils = new consoleUtil();
+    //================================================
+    //Initialize necessary components
+    //================================================
+
+    private Scanner scanner = new Scanner(System.in);
+    private FileHandling fileHandling = new FileHandling();
+    private consoleUtil ConsoleUtils = new consoleUtil();
+
+    private String searchQuery = "";
+    private HashMap<String, String> activeFilters = new HashMap<>();
+    private ArrayList<Book> filteredBooks = new ArrayList<>();
     
+    
+    //===============================================
+    //Auth, to retrive current user info
+    //===============================================
+
     private Auth auth;
+    public void setAuth(Auth auth){this.auth = auth;}
+    public Auth getAuth(){return auth;}
 
-    public void setAuth(Auth auth) {
-        this.auth = auth;
+    //=================================================
+    //helper methods
+    //=================================================
+
+    private static String formatDateTime(Date date) {
+        if (date == null) return "";
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yy HH:mm");
+        return sdf.format(date);
     }
 
-    public Auth getAuth() {
-        return auth;
+    private boolean alreadyBorrowing(Book selectedBook) {
+        return selectedBook.getBorrowDetails().stream()
+            .anyMatch(record -> record.getStatus() == BorrowStatus.BORROWED && 
+                    record.getUsername().equals(auth.getCurrentUser().getUsername()));
     }
 
-    // Define table columns
-    public enum Column {
-        INDEX, ID, TITLE, AUTHOR, GENRE, YEAR, LAST_EDITED, AVAILABLE
+    private boolean alreadyFavorited(Book selectedBook) {
+        return auth.getCurrentUser().getFavoriteBooks().contains(selectedBook.getBookId());
     }
 
+    //===============================================
+    //ui methods
+    //===============================================
 
    // Handles printing the table of books
     public void displayTable(boolean promptSelect) {
@@ -47,64 +71,45 @@ public class ManageBooks {
 
 
         boolean filter = true;
-
         boolean loop = true;
 
         while (loop) {
 
-            
             if(filter){
                 ArrayList<Book> filteredBooks = searchFilterMenu(books);
                 filter = false;
             }
 
-            if(filteredBooks.isEmpty()){
-                break;
-            }
-
-            // Print table with selected columns
-
-            if(auth.getCurrentUser().getRole() == "Librarian"){
-                consoleUtil.printTable(filteredBooks, "books", auth);
-            }
-            else{
-                consoleUtil.printTable(filteredBooks, "books", auth);
-            }
-
+            consoleUtil.printTable(filteredBooks, "books", auth);
             if (!promptSelect) break;
 
             
             if(auth.getCurrentUser().getRole() == "Librarian"){
                 System.out.println("\nEnter a Book index to view its description");
-                System.out.println("Press 'F' to filter again, or '0' to exit");
-                System.out.println("==============================================");
             }
             else{
                 System.out.println("\nEnter a book index to view more options.");
-                System.out.println("Press 'F' to filter again, or '0' to exit");
-                System.out.println("==============================================");
             }
 
-
+            System.out.println("Press 'F' to filter again, or '0' to exit");
+            System.out.println("==============================================");
 
             String input = scanner.nextLine().trim();
 
-            if (input.isEmpty()) {
-                continue; 
-            }
+            if (input.isEmpty()) {continue;}
+
+
 
             // Handle different input types
             switch (input.toUpperCase()) {
-                case "":
-                    filteredBooks = new ArrayList<>();
-                    continue; // Exit the method
                 case "0":
-                    filteredBooks = new ArrayList<>();
-                    continue; // Exit the method
+                    loop = false;
+                    System.out.println(Ansi.ORANGE + "Exiting book list..." + Ansi.RESET + "\n");
+                    break;
                     
                 case "F":
                     filter = true;
-                    continue; // Go back to filter menu
+                    continue;
                     
                 default:
                     // Validate numeric input for book selection
@@ -122,32 +127,46 @@ public class ManageBooks {
 
                     // Valid book selected
 
-                    if(auth.getCurrentUser().getRole().equals("Librarian")){
-                        Book selectedBook = filteredBooks.get(index);
-
-                        System.out.println("Title: " + selectedBook.getTitle());
-                        System.out.println("Description: " + selectedBook.getDescription());
-                        System.out.println("==============================================");
-                        System.out.println("Press Enter to continue...");
-                        scanner.nextLine();
-
+                    if(selectorMenu(books, index)){
+                        loop = true;
                     }
-                    if(auth.getCurrentUser().getRole().equals("Reader")){
-                        //get book from index and display description
-                        Book selectedBook = filteredBooks.get(index);
-
-                        System.out.println("Title: " + selectedBook.getTitle());
-                        System.out.println("Description: " + selectedBook.getDescription());
-                        System.out.println("==============================================");
-
-                        if(selectBookReader(selectedBook)){
-                            loop = false;
-                        }
-                        
-                        
+                    else{
+                        loop = false;
                     }
+                    
             }     
         }   
+    }
+
+
+    public boolean selectorMenu(ArrayList<Book> books, int index) {
+        
+        if(auth.getCurrentUser().getRole().equals("Librarian")){
+            Book selectedBook = filteredBooks.get(index);
+
+            System.out.println("Title: " + selectedBook.getTitle());
+            System.out.println("Description: " + selectedBook.getDescription());
+            System.out.println("==============================================");
+            System.out.println("Press Enter to continue...");
+            scanner.nextLine();
+            return true;
+
+        }
+        if(auth.getCurrentUser().getRole().equals("Reader")){
+            //get book from index and display description
+            Book selectedBook = filteredBooks.get(index);
+
+            System.out.println("Title: " + selectedBook.getTitle());
+            System.out.println("Description: " + selectedBook.getDescription());
+            System.out.println("==============================================");
+
+            if(selectBookReader(selectedBook)){
+                return false;
+            }               
+        }
+
+        return true;
+
     }
 
     // Menu shown after a reader selects a specific book
@@ -155,16 +174,8 @@ public class ManageBooks {
         boolean stayInMenu = true;
         boolean loop = true;
 
-        boolean alreadyBorrowing = false;
-        boolean alreadyFav = false;
-
-        // Check if user is already borrowing this book
-        alreadyBorrowing = selectedBook.getBorrowDetails().stream()
-            .anyMatch(record -> record.getStatus() == BorrowStatus.BORROWED && 
-                    record.getUsername().equals(auth.getCurrentUser().getUsername()));
-
-        // Check if book is already in favorites
-        alreadyFav = auth.getCurrentUser().getFavoriteBooks().contains(selectedBook.getBookId());
+        boolean alreadyBorrowing = alreadyBorrowing(selectedBook);;
+        boolean alreadyFav = alreadyFavorited(selectedBook);;
         
 
         while (loop) {
@@ -441,10 +452,7 @@ public class ManageBooks {
 
 
     
-    String searchQuery = "";
-    HashMap<String, String> activeFilters = new HashMap<>();
-    ArrayList<Book> filteredBooks = new ArrayList<>();
-    
+
     //handle searching and filtering of books
     public ArrayList<Book> searchFilterMenu(ArrayList<Book> books) {
 
@@ -1004,15 +1012,7 @@ public class ManageBooks {
 
 
 
-    //=================================================
-    //helper methods
-    //=================================================
 
-    private static String formatDateTime(Date date) {
-        if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yy HH:mm");
-        return sdf.format(date);
-    }
 
     
 

@@ -9,8 +9,28 @@ import java.util.Scanner;
 import com.mycompany.library.BorrowDetails.BorrowStatus;
 
 public class ManageReport {
+    
+    //================================================
+    // constants
+    //================================================
+    private static final String ACCOUNTS_FILE = "accounts.ser";
+    private static final int TOP_BOOKS_LIMIT = 5;
+    private static final int TITLE_MAX_LENGTH = 30;
+    
+    //================================================
+    // instance fields
+    //================================================
+    private final FileHandling fileHandling = new FileHandling();
+    private final ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
+    private final ManageBooks manageBooks = new ManageBooks();
+    private final consoleUtil consoleUtil = new consoleUtil();
+    
     private Auth auth;
 
+    //================================================
+    // auth
+    //================================================
+    
     public void setAuth(Auth auth) {
         this.auth = auth;
     }
@@ -19,35 +39,36 @@ public class ManageReport {
         return auth;
     }
 
+
+    //================================================
+    // report generation
+    //================================================
+    
+
     public Report getValues() {
-        FileHandling fileHandling = new FileHandling();
-        ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
-        ManageBooks manageBooks = new ManageBooks();
-        
         ArrayList<Book> books = manageBooks.getAllBooks();
         ArrayList<BorrowDetails> borrowRecords = manageBorrowRecords.getAllRecordFromBooks();
-        ArrayList<User> accounts = fileHandling.readFromFile("accounts.ser", User.class);
+        ArrayList<User> accounts = fileHandling.readFromFile(ACCOUNTS_FILE, User.class);
 
         int totalBooks = books.size();
-        int totalUsers = accounts.size();
+        int totalUsers = accounts != null ? accounts.size() : 0;
         int totalBorrows = borrowRecords.size();
-        int borrowed = 0;
-        int returned = 0;
-        int overdue = 0;
 
-        for (BorrowDetails record : borrowRecords) {
-            if (record.getStatus() == BorrowStatus.BORROWED) {
-                borrowed++;
-            } else if (record.getStatus() == BorrowStatus.RETURNED) {
-                returned++;
-            } else if (record.getStatus() == BorrowStatus.OVERDUE) {
-                overdue++;
-            }
-        }
+        // Use streams for counting
+        long borrowed = borrowRecords.stream()
+            .filter(r -> r.getStatus() == BorrowStatus.BORROWED)
+            .count();
+        
+        long returned = borrowRecords.stream()
+            .filter(r -> r.getStatus() == BorrowStatus.RETURNED)
+            .count();
+        
+        long overdue = borrowRecords.stream()
+            .filter(r -> r.getStatus() == BorrowStatus.OVERDUE)
+            .count();
 
-        Report report = new Report(totalBooks, totalUsers, totalBorrows, borrowed, returned, overdue);
-        return report;
-
+        return new Report(totalBooks, totalUsers, totalBorrows, 
+                         (int) borrowed, (int) returned, (int) overdue);
     }
 
     public void generateReport() {
@@ -64,8 +85,10 @@ public class ManageReport {
         
         System.out.println("\nDate: " + java.time.LocalDate.now() + "\n");
 
+        //print report table
         consoleUtil.printTable(reportList, "report", auth);
 
+        //show list of most borrowed books
         showMostBorrowedBooks();
         
         System.out.println("==============================================");
@@ -75,38 +98,54 @@ public class ManageReport {
     }
 
     private void showMostBorrowedBooks() {
-        ManageBooks manageBooks = new ManageBooks();
-        ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
-        
         ArrayList<Book> allBooks = manageBooks.getAllBooks();
         ArrayList<BorrowDetails> allRecords = manageBorrowRecords.getAllRecordFromBooks();
         
-        Map<String, Integer> borrowCount = new HashMap<>();
-        for (BorrowDetails record : allRecords) {
-            borrowCount.put(record.getBookId(), borrowCount.getOrDefault(record.getBookId(), 0) + 1);
-        }
+        // Count borrows per book
+        Map<String, Integer> borrowCountByBookId = countBorrowsByBook(allRecords);
         
-        // Get top 5 most borrowed books
-        ArrayList<Book> topBooks = allBooks.stream()
-            .filter(book -> borrowCount.containsKey(book.getBookId()))
-            .sorted((b1, b2) -> borrowCount.get(b2.getBookId()).compareTo(borrowCount.get(b1.getBookId())))
-            .limit(5)
-            .collect(Collectors.toCollection(ArrayList::new));
+        // Get top borrowed books
+        ArrayList<Book> topBooks = getTopBorrowedBooks(allBooks, borrowCountByBookId, TOP_BOOKS_LIMIT);
         
         if (!topBooks.isEmpty()) {
-            System.out.println("\nTop 5 Most Borrowed Books:");
-            System.out.println("==============================================");
-            
-            for (int i = 0; i < topBooks.size(); i++) {
-                Book book = topBooks.get(i);
-                int count = borrowCount.get(book.getBookId());
-                System.out.printf("%d. %s by %s - %d borrows\n", 
-                    (i + 1), 
-                    consoleUtil.truncateString(book.getTitle(), 30), 
-                    book.getAuthor(), 
-                    count);
-            }
-            System.out.println();
+            displayTopBooks(topBooks, borrowCountByBookId);
         }
+    }
+
+    private Map<String, Integer> countBorrowsByBook(ArrayList<BorrowDetails> records) {
+        Map<String, Integer> borrowCount = new HashMap<>();
+        for (BorrowDetails record : records) {
+            borrowCount.put(record.getBookId(), 
+                           borrowCount.getOrDefault(record.getBookId(), 0) + 1);
+        }
+        return borrowCount;
+    }
+
+
+    private ArrayList<Book> getTopBorrowedBooks(ArrayList<Book> books, 
+        Map<String, Integer> borrowCount, int limit) {
+        return books.stream()
+            .filter(book -> borrowCount.containsKey(book.getBookId()))
+            .sorted((b1, b2) -> borrowCount.get(b2.getBookId())
+                                          .compareTo(borrowCount.get(b1.getBookId())))
+            .limit(limit)
+            .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+
+    private void displayTopBooks(ArrayList<Book> topBooks, Map<String, Integer> borrowCount) {
+        System.out.println("\nTop " + TOP_BOOKS_LIMIT + " Most Borrowed Books:");
+        System.out.println("==============================================");
+        
+        for (int i = 0; i < topBooks.size(); i++) {
+            Book book = topBooks.get(i);
+            int count = borrowCount.get(book.getBookId());
+            System.out.printf("%d. %s by %s - %d borrows%n", 
+                (i + 1), 
+                consoleUtil.truncateString(book.getTitle(), TITLE_MAX_LENGTH), 
+                book.getAuthor(), 
+                count);
+        }
+        System.out.println();
     }
 }
