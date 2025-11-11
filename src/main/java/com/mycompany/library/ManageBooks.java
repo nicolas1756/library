@@ -1,32 +1,28 @@
 package com.mycompany.library;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
 
 import com.mycompany.library.BorrowDetails.BorrowStatus;
 
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-
 public class ManageBooks {
 
     //================================================
-    //Initialize necessary components
+    // CONSTANTS
     //================================================
-
-    private Scanner scanner = new Scanner(System.in);
-    private FileHandling fileHandling = new FileHandling();
-    private consoleUtil ConsoleUtils = new consoleUtil();
+    private static final String BOOKS_FILE = "books.ser";
+    
+    //================================================
+    // INSTANCE FIELDS
+    //================================================
+    private final Scanner scanner = new Scanner(System.in);
+    private final FileHandling fileHandling = new FileHandling();
+    private final consoleUtil ConsoleUtils = new consoleUtil();
 
     private String searchQuery = "";
     private HashMap<String, String> activeFilters = new HashMap<>();
@@ -78,6 +74,10 @@ public class ManageBooks {
             if(filter){
                 ArrayList<Book> filteredBooks = searchFilterMenu(books);
                 filter = false;
+            }
+
+            if(filteredBooks.isEmpty()){
+                break;
             }
 
             consoleUtil.printTable(filteredBooks, "books", auth);
@@ -174,8 +174,8 @@ public class ManageBooks {
         boolean stayInMenu = true;
         boolean loop = true;
 
-        boolean alreadyBorrowing = alreadyBorrowing(selectedBook);;
-        boolean alreadyFav = alreadyFavorited(selectedBook);;
+        boolean alreadyBorrowing = alreadyBorrowing(selectedBook);
+        boolean alreadyFav = alreadyFavorited(selectedBook);
         
 
         while (loop) {
