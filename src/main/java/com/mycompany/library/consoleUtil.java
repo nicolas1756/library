@@ -405,19 +405,73 @@ public class consoleUtil {
     }
 
     public static boolean detectUnicodeSupport() {
+        // Check for IDE detection via various methods
+        boolean isIDE = detectIDE();
+
+        if (isIDE) {
+            return false;
+        }
+
         String os = System.getProperty("os.name").toLowerCase();
         String term = System.getenv("TERM");
         String conEmu = System.getenv("ConEmuANSI");
         String wtSession = System.getenv("WT_SESSION");
         String psModulePath = System.getenv("PSModulePath");
-        String encoding = System.getProperty("sun.stdout.encoding", "UTF-8");
 
-        return (wtSession != null) || 
-            (conEmu != null && conEmu.equalsIgnoreCase("ON")) || 
-            (psModulePath != null && os.contains("win")) || 
-            (term != null && (term.contains("xterm") || term.contains("ansi") || term.contains("vt100"))) ||
-            (encoding.toLowerCase().contains("utf")) || 
-            (!os.contains("win"));
+        // Detect old Windows Command Prompt
+        boolean isOldWindowsCmd = os.contains("win") && 
+                                  term == null && 
+                                  wtSession == null && 
+                                  conEmu == null &&
+                                  psModulePath == null;
+
+        if (isOldWindowsCmd) {
+            return false;
+        }
+
+        // Known good environments
+        return (wtSession != null) ||  // Windows Terminal
+               (conEmu != null && conEmu.equalsIgnoreCase("ON")) ||  // ConEmu
+               (psModulePath != null && os.contains("win")) ||  // PowerShell
+               (term != null && (term.contains("xterm") || 
+                                term.contains("ansi") || 
+                                term.contains("vt100") ||
+                                term.contains("screen") ||
+                                term.contains("tmux"))) ||
+               (os.contains("mac") || os.contains("nix") || os.contains("nux"));
+    }
+
+    private static boolean detectIDE() {
+        // Check if System.console() is null (IDEs typically don't have a console)
+        if (System.console() == null) {
+            return true;
+        }
+
+        // Check classpath for common IDEs
+        String classPath = System.getProperty("java.class.path", "").toLowerCase();
+        String[] ideMarkers = {"netbeans", "idea", "eclipse", "vscode"};
+
+        for (String marker : ideMarkers) {
+            if (classPath.contains(marker)) {
+                return true;
+            }
+        }
+
+        // Check system properties
+        if (System.getProperty("netbeans.home") != null ||
+            System.getProperty("idea.home") != null ||
+            System.getProperty("eclipse.home.location") != null) {
+            return true;
+        }
+
+        // Check environment variables
+        if (System.getenv("NETBEANS_HOME") != null ||
+            System.getenv("IDEA_HOME") != null ||
+            System.getenv("ECLIPSE_HOME") != null) {
+            return true;
+        }
+
+        return false;
     }
 
     //================================================
