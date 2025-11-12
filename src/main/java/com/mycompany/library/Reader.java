@@ -39,7 +39,7 @@ public class Reader extends User {
         System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
 
 
-        String input = scanner.next();
+        String input = scanner.nextLine();
 
         switch (input) {
             case "1":

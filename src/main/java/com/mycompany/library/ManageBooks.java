@@ -66,9 +66,8 @@ public class ManageBooks {
         return auth.getCurrentUser().getFavoriteBooks().contains(selectedBook.getBookId());
     }
 
-    /**
-     * Updates a book in the books list and saves to file
-     */
+
+    //updates books.ser file with new book info
     private void updateBookInList(Book book) {
         ArrayList<Book> books = getAllBooks();
         
@@ -82,9 +81,7 @@ public class ManageBooks {
         fileHandling.overrideFile(BOOKS_FILE, books);
     }
 
-    /**
-     * Updates current user in accounts file
-     */
+    //updates accounts.ser file with new user info
     private void updateUserInAccounts() {
         ArrayList<User> accounts = fileHandling.readFromFile(ACCOUNTS_FILE, User.class);
         
@@ -317,10 +314,8 @@ public class ManageBooks {
         }
     }
 
-    /**
-     * Prompts user to select borrow duration
-     * @return number of days (7, 14, or 30), or 0 if cancelled
-     */
+
+    //menu to prompt borrow duration
     private int promptBorrowDuration() {
         while (true) {
             System.out.println("\n==============================================");
@@ -363,6 +358,7 @@ public class ManageBooks {
         }
     }
 
+    //menu to display favourite books
     public void getFavourites(ArrayList<String> favoriteBooks) {
         while (true) {
             ArrayList<Book> books = getAllBooks();
@@ -416,26 +412,33 @@ public class ManageBooks {
         }
     }
 
+
+    //method to borrow book
     private void borrowBook(Book book, int days) {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH, days);
         Date dueDate = calendar.getTime();
 
+
+        //create new borrow record
         BorrowDetails record = new BorrowDetails(
             auth.getCurrentUser().getUsername(),
             book.getBookId(),
             dueDate
         );
 
+        //update book status and add borrow record
         book.setAvailable(false);
         book.addBorrowRecord(record);
 
+        //update books.ser file
         updateBookInList(book);
 
         System.out.println(Ansi.GREEN + "\nSuccessfully borrowed \"" + book.getTitle() + "\"!" + Ansi.RESET);
         System.out.println("Due Date: " + Ansi.CYAN + formatDateTime(dueDate) + Ansi.RESET);
     }
 
+    //methods to add/remove book from favourites
     private void addToFavorites(Book book) {
         String bookID = book.getBookId();
         auth.getCurrentUser().addFavoriteBook(bookID);
@@ -564,10 +567,19 @@ public class ManageBooks {
      * Applies search query
      */
     private void applySearch(ArrayList<Book> books) {
+
+        
+
         System.out.print("\nEnter search keyword (title/author/year/id): ");
         searchQuery = scanner.nextLine().trim().toLowerCase();
+
+        if (searchQuery.isEmpty()) {
+            searchQuery = "";
+        }
         
         filteredBooks = new ArrayList<>();
+        reapplyAllFilters(filteredBooks);
+
         for (Book b : books) {
             if (b.getTitle().toLowerCase().contains(searchQuery)
                     || b.getAuthor().toLowerCase().contains(searchQuery)
@@ -576,13 +588,36 @@ public class ManageBooks {
                 filteredBooks.add(b);
             }
         }
+
+        reapplyAllFilters(filteredBooks);
         
         if (filteredBooks.isEmpty()) {
             System.out.println(Ansi.YELLOW + "No results found for: " + searchQuery + Ansi.RESET);
         } else {
             System.out.println(filteredBooks.size() + " result(s) found.");
         }
+        
     }
+
+    public void reapplySearch(){
+        if (searchQuery.isEmpty()) {
+            return;
+        }
+
+        ArrayList<Book> tempBooks = new ArrayList<>(filteredBooks);
+        filteredBooks.clear();
+
+        for (Book b : tempBooks) {
+            if (b.getTitle().toLowerCase().contains(searchQuery)
+                    || b.getAuthor().toLowerCase().contains(searchQuery)
+                    || b.getBookId().toLowerCase().contains(searchQuery)
+                    || b.getYearPublished().toLowerCase().contains(searchQuery)) {
+                filteredBooks.add(b);
+            }
+        }
+    }
+
+    
 
     /**
      * Applies filter based on user selection
@@ -610,6 +645,7 @@ public class ManageBooks {
 
         // Reapply all filters
         reapplyAllFilters(books);
+
     }
 
     /**

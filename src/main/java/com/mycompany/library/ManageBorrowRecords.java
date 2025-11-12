@@ -149,7 +149,7 @@ public class ManageBorrowRecords {
             }
 
         }
-        return "Unable to load ";
+        return "";
     }
         
     //===============================================
