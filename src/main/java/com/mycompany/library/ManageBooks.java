@@ -20,6 +20,7 @@ public class ManageBooks {
     private static final int BORROW_DURATION_7_DAYS = 7;
     private static final int BORROW_DURATION_14_DAYS = 14;
     private static final int BORROW_DURATION_30_DAYS = 30;
+    private static final String DATE_FORMAT = "dd/MM/yy HH:mm";
     
     //================================================
     // INSTANCE FIELDS
@@ -52,7 +53,7 @@ public class ManageBooks {
 
     private static String formatDateTime(Date date) {
         if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yy HH:mm");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(DATE_FORMAT);
         return sdf.format(date);
     }
 
@@ -140,14 +141,14 @@ public class ManageBooks {
                 default:
                     // Validate numeric input for book selection
                     if (!input.matches("\\d+")) {
-                        System.out.println(Ansi.RED + "Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit." + Ansi.RESET);
+                        System.out.println(Ansi.warn("Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit."));
                         continue;
                     }
 
                     int index = Integer.parseInt(input) - 1;
                     
                     if (index < 0 || index >= filteredBooks.size()) {
-                        System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                        System.out.println(Ansi.warn("Invalid index. Please select a number from the table."));
                         continue;
                     }
 
@@ -185,11 +186,10 @@ public class ManageBooks {
     public boolean selectorMenu(ArrayList<Book> books, int index) {
         Book selectedBook = filteredBooks.get(index);
 
-        System.out.println("Title: " + selectedBook.getTitle());
-        System.out.println("Description: " + selectedBook.getDescription());
-        System.out.println("==============================================");
-        
         if(auth.getCurrentUser().getRole().equals("Librarian")){
+            System.out.println("Title: " + selectedBook.getTitle());
+            System.out.println("Description: " + selectedBook.getDescription());
+            System.out.println("==============================================");
             System.out.println("Press Enter to continue...");
             scanner.nextLine();
             return true;
@@ -243,7 +243,7 @@ public class ManageBooks {
                     break;
 
                 default:
-                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                    System.out.println(Ansi.warn("Invalid choice. Please try again."));
             }
         }
 
@@ -283,7 +283,7 @@ public class ManageBooks {
         
         System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
         System.out.println("==============================================");
-        System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
     }
 
     /**
@@ -292,12 +292,12 @@ public class ManageBooks {
      */
     private boolean handleBorrowBook(Book selectedBook, boolean alreadyBorrowing) {
         if(alreadyBorrowing){
-            System.out.println(Ansi.RED + "You have already borrowed this book." + Ansi.RESET);
+            System.out.println(Ansi.warn("You have already borrowed this book."));
             return false;
         }
 
         if (!selectedBook.getAvailable()) {
-            System.out.println(Ansi.RED + "This book is currently borrowed and unavailable." + Ansi.RESET);
+            System.out.println(Ansi.warn("This book is currently borrowed and unavailable."));
             System.out.println("You can still add it to your favourites and borrow it once it becomes available.");
             return false;
         }
@@ -309,7 +309,7 @@ public class ManageBooks {
             borrowBook(selectedBook, days);
             return true; // Exit menu after borrowing
         } else {
-            System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+            System.out.println(Ansi.info("Borrowing cancelled."));
             return false;
         }
     }
@@ -326,19 +326,19 @@ public class ManageBooks {
             System.out.println(Ansi.ORANGE + "3." + Ansi.RESET + " 30 days");
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Cancel");
             System.out.println("==============================================");
-            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+            System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
 
             String borrowFor = scanner.nextLine().trim();
 
             // Check for blank input
             if (borrowFor.isEmpty()) {
-                System.out.println(Ansi.RED + "Input cannot be empty. Please enter a number (0–3)." + Ansi.RESET);
+                System.out.println(Ansi.warn("Input cannot be empty. Please enter a number (0-3)."));
                 continue;
             }
 
             // Check if numeric
             if (!borrowFor.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter only numbers (0–3)." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid input. Please enter only numbers (0-3)."));
                 continue;
             }
 
@@ -350,10 +350,10 @@ public class ManageBooks {
                 case "3":
                     return BORROW_DURATION_30_DAYS;
                 case "0":
-                    System.out.println(Ansi.ORANGE + "Borrowing cancelled." + Ansi.RESET);
+                    System.out.println(Ansi.info("Borrowing cancelled."));
                     return 0;
                 default:
-                    System.out.println(Ansi.RED + "Invalid option. Please choose between 0–3." + Ansi.RESET);
+                    System.out.println(Ansi.warn("Invalid option. Please choose between 0-3."));
             }
         }
     }
@@ -373,7 +373,7 @@ public class ManageBooks {
             ArrayList<Book> filteredBooks = books;
 
             if (filteredBooks.isEmpty()) {
-                System.out.println(Ansi.RED + "\nNo books favourited." + Ansi.RESET);
+                System.out.println(Ansi.warn("No books favourited."));
                 return;
             }
 
@@ -394,13 +394,13 @@ public class ManageBooks {
 
             // Validate numeric input
             if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter a valid number or press Enter to exit." + Ansi.RESET);
+                System.out.println(Ansi.info("Invalid input. Please enter a valid number or press Enter to exit."));
                 continue;
             }
 
             int index = Integer.parseInt(input) - 1;
             if (index < 0 || index >= filteredBooks.size()) {
-                System.out.println(Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid index. Please select a number from the table."));
                 continue;
             }
 
@@ -434,7 +434,7 @@ public class ManageBooks {
         //update books.ser file
         updateBookInList(book);
 
-        System.out.println(Ansi.GREEN + "\nSuccessfully borrowed \"" + book.getTitle() + "\"!" + Ansi.RESET);
+        System.out.println(Ansi.success("\nSuccessfully borrowed \"" + book.getTitle() + "\"!"));
         System.out.println("Due Date: " + Ansi.CYAN + formatDateTime(dueDate) + Ansi.RESET);
     }
 
@@ -443,7 +443,7 @@ public class ManageBooks {
         String bookID = book.getBookId();
         auth.getCurrentUser().addFavoriteBook(bookID);
         updateUserInAccounts();
-        System.out.println(Ansi.GREEN + book.getTitle() + " added to favourites"+ Ansi.RESET);
+        System.out.println(Ansi.success(book.getTitle() + " added to favourites"));
     }
 
     private void removeFromFavorites(Book book) {
@@ -452,7 +452,7 @@ public class ManageBooks {
 
         if (favorites.contains(bookID)) {
             favorites.remove(bookID);
-            System.out.println(Ansi.GREEN + book.getTitle() + " has been removed from your favourites." + Ansi.RESET);
+            System.out.println(Ansi.success(book.getTitle() + " has been removed from your favourites."));
         }
 
         updateUserInAccounts();
@@ -494,12 +494,12 @@ public class ManageBooks {
                         return filteredBooks;
                     }
                     else{
-                        System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+                        System.out.println(Ansi.info("No books available."));
                     }
                     break;
 
                 default:
-                    System.out.println(Ansi.RED + "Invalid choice." + Ansi.RESET);
+                    System.out.println(Ansi.warn("Invalid choice."));
             }
         }
     }
@@ -592,7 +592,7 @@ public class ManageBooks {
         reapplyAllFilters(filteredBooks);
         
         if (filteredBooks.isEmpty()) {
-            System.out.println(Ansi.YELLOW + "No results found for: " + searchQuery + Ansi.RESET);
+            System.out.println(Ansi.ORANGE + "No results found for: " + searchQuery + Ansi.RESET);
         } else {
             System.out.println(filteredBooks.size() + " result(s) found.");
         }
@@ -638,7 +638,7 @@ public class ManageBooks {
             case "3" -> filterByGenre();
             case "4" -> filterByAvailability();
             default -> {
-                System.out.println(Ansi.RED + "Invalid filter option." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid filter option."));
                 return;
             }
         }
@@ -652,7 +652,7 @@ public class ManageBooks {
      * Filter by author
      */
     private void filterByAuthor() {
-        System.out.print(Ansi.YELLOW + "Enter author name (leave empty to clear author filter): " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Enter author name (leave empty to clear author filter): " + Ansi.RESET);
         String author = scanner.nextLine().trim();
 
         if (author.isEmpty()) {
@@ -673,7 +673,7 @@ public class ManageBooks {
         System.out.println(Ansi.ORANGE + "2. " + Ansi.RESET + "After year");
         System.out.println(Ansi.ORANGE + "3. " + Ansi.RESET + "Exact year");
         
-        System.out.print(Ansi.YELLOW + "Select option (1-3, leave empty to clear year filter): " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Select option (1-3, leave empty to clear year filter): " + Ansi.RESET);
         String selection = scanner.nextLine().trim();
 
         if (selection.isEmpty()) {
@@ -705,7 +705,7 @@ public class ManageBooks {
      * Filter by genre
      */
     private void filterByGenre() {
-        System.out.print(Ansi.YELLOW + "Enter genre (leave empty to clear genre filter): " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Enter genre (leave empty to clear genre filter): " + Ansi.RESET);
         String genre = scanner.nextLine().trim();
 
         if (genre.isEmpty()) {
@@ -724,7 +724,7 @@ public class ManageBooks {
         System.out.println("\nSelect availability type:");
         System.out.println(Ansi.ORANGE + "1. " + Ansi.RESET + "Available");
         System.out.println(Ansi.ORANGE + "2. " + Ansi.RESET + "Unavailable");
-        System.out.print(Ansi.YELLOW + "Select option (1-2, leave empty to clear availability filter): " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Select option (1-2, leave empty to clear availability filter): " + Ansi.RESET);
         
         String availabilityChoice = scanner.nextLine().trim();
 
@@ -821,7 +821,7 @@ public class ManageBooks {
     // Add a new book
     public void addBook() {
         System.out.println("=================" + Ansi.BOLD + " Add a Book " + Ansi.RESET + "=================");
-        System.out.println(Ansi.RED + "Enter 0 to go back" + Ansi.RESET);
+        System.out.println(Ansi.info("Enter 0 to go back"));
         System.out.println("==============================================");
         
         String title = null;
@@ -859,7 +859,7 @@ public class ManageBooks {
 
                     genres = parseGenres(genreInput);
                     if (genres.isEmpty()) {
-                        System.out.println(Ansi.RED + "At least one valid genre is required!" + Ansi.RESET);
+                        System.out.println(Ansi.warn("At least one valid genre is required!"));
                         return;
                     }
                     break;
@@ -869,7 +869,7 @@ public class ManageBooks {
                     fileHandling.appendToFile(BOOKS_FILE, newBook, Book.class);
                     
                     System.out.println("==============================================");
-                    System.out.println(Ansi.GREEN  + newBook + "\nsuccessfully added!");
+                    System.out.println(Ansi.success(newBook + "\nsuccessfully added!"));
                     System.out.println("==============================================" + Ansi.RESET);
                     return; // Exit after adding the book
             }
@@ -890,19 +890,19 @@ public class ManageBooks {
             }
 
             if (input.isEmpty()) {
-                System.out.println(Ansi.RED + "Year cannot be empty!" + Ansi.RESET);
+                System.out.println(Ansi.warn("Year cannot be empty!"));
                 continue;
             }
 
             if (!input.matches("\\d{4}")) {
-                System.out.println(Ansi.RED + "Invalid year format. Please enter a 4-digit year." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid year format. Please enter a 4-digit year."));
                 continue;
             }
 
             int year = Integer.parseInt(input);
             
             if (year < 1000 || year > 2100) {
-                System.out.println(Ansi.RED + "Year must be between 1000 and 2100." + Ansi.RESET);
+                System.out.println(Ansi.warn("Year must be between 1000 and 2100."));
                 continue;
             }
 
@@ -922,7 +922,7 @@ public class ManageBooks {
             if (!genre.isEmpty() && genre.matches("[a-zA-Z\\s]+")) {
                 genres.add(genre);
             } else if (!genre.isEmpty()) {
-                System.out.println(Ansi.YELLOW + "Warning: Skipping invalid genre '" + genre + "' (letters only)" + Ansi.RESET);
+                System.out.println(Ansi.warn("Warning: Skipping invalid genre '" + genre + "' (letters only)"));
             }
         }
         
@@ -942,17 +942,17 @@ public class ManageBooks {
             }
 
             if (input.isEmpty()) {
-                System.out.println(Ansi.RED + fieldName + " cannot be empty!" + Ansi.RESET);
+                System.out.println(Ansi.warn(fieldName + " cannot be empty!"));
                 continue;
             }
 
             if (fieldName.equals("Author") && !input.matches("[a-zA-Z\\s\\.]+")) {
-                System.out.println(Ansi.RED + "Author name can only contain letters, spaces, and periods!" + Ansi.RESET);
+                System.out.println(Ansi.warn("Author name can only contain letters, spaces, and periods!"));
                 continue;
             }
 
             if (fieldName.equals("Description") && input.length() < 10) {
-                System.out.println(Ansi.RED + "Description must be at least 10 characters long!" + Ansi.RESET);
+                System.out.println(Ansi.warn("Description must be at least 10 characters long!"));
                 continue;
             }
 
@@ -965,7 +965,7 @@ public class ManageBooks {
         ArrayList<Book> books = getAllBooks();
 
         if (books == null || books.isEmpty()) {
-            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            System.out.println(Ansi.warn("No books available."));
             return;
         }
 
@@ -975,23 +975,23 @@ public class ManageBooks {
         int index = Integer.parseInt(input) - 1;
 
         if (index < 0 || index >= books.size()) {
-            System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+            System.out.println(Ansi.warn("Invalid index. Please select a valid number from the table."));
             return;
         }
 
         Book selectedBook = books.get(index);
 
-        System.out.println(Ansi.YELLOW + "Selected book: " + Ansi.RESET + selectedBook.getTitle() + " (" + selectedBook.getBookId() + ")");
+        System.out.println(Ansi.ORANGE + "Selected book: " + Ansi.RESET + selectedBook.getTitle() + " (" + selectedBook.getBookId() + ")");
         
         if (consoleUtil.confirmAction("Are you sure? This action cannot be undone.")) {
             books.remove(index);
             fileHandling.overrideFile(BOOKS_FILE, books);
-            System.out.println(Ansi.ORANGE + "Book \"" + selectedBook.getTitle() + "\" (ID: " + selectedBook.getBookId() + ") has been removed." + Ansi.RESET);
+            System.out.println(Ansi.success("Book \"" + selectedBook.getTitle() + "\" (ID: " + selectedBook.getBookId() + ") has been removed."));
             
             // Clear filtered books to force refresh
             filteredBooks.clear();
         } else {
-            System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+            System.out.println(Ansi.success("Cancelled."));
         }
 
         System.out.println("==============================================");
@@ -1002,7 +1002,7 @@ public class ManageBooks {
         ArrayList<Book> books = getAllBooks();
 
         if (books == null || books.isEmpty()) {
-            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            System.out.println(Ansi.warn("No books available."));
             return;
         }
 
@@ -1012,13 +1012,13 @@ public class ManageBooks {
         int index = Integer.parseInt(input) - 1;
 
         if (index < 0 || index >= books.size()) {
-            System.out.println(Ansi.RED + "Invalid index. Please select a valid number from the table." + Ansi.RESET);
+            System.out.println(Ansi.warn("Invalid index. Please select a valid number from the table."));
             return;
         }
 
         Book book = books.get(index);
 
-        System.out.println(Ansi.ORANGE + "Editing Book: " + book.getTitle() + " (ID: " + book.getBookId() + ")" + Ansi.RESET);
+        System.out.println(Ansi.info("Editing Book: " + book.getTitle() + " (ID: " + book.getBookId() + ")"));
 
         editBookMenu(book, books);
         
@@ -1034,9 +1034,9 @@ public class ManageBooks {
             if(!displayTable(false)){
                 return null;
             }
-            System.out.println("\n" + Ansi.RED + "Press 'F' to filter again, or '0' to exit" + Ansi.RESET);
+            System.out.println("\n" + Ansi.info("Press 'F' to filter again, or '0' to exit" ));
             System.out.println("==============================================");
-            System.out.print(Ansi.YELLOW + "Enter the book index to " + action + ": " + Ansi.RESET);
+            System.out.print("Enter the book index to " + action + ": ");
 
             String input = scanner.nextLine().trim();
 
@@ -1045,12 +1045,12 @@ public class ManageBooks {
             }
 
             if (input.equals("0")) {
-                System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                System.out.println(Ansi.info("Cancelled."));
                 return null;
             }
 
             if (!input.matches("\\d+")) {
-                System.out.println(Ansi.RED + "Invalid input. Please enter a number." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid input. Please enter a number."));
                 continue;
             }
 
@@ -1073,7 +1073,7 @@ public class ManageBooks {
             System.out.println(Ansi.ORANGE + "5." + Ansi.RESET + " Save and Exit");
             System.out.println(Ansi.ORANGE + "6." + Ansi.RESET + " Back without saving");
 
-            System.out.print(Ansi.YELLOW + "\nEnter choice: " + Ansi.RESET);
+            System.out.print(Ansi.ORANGE + "\nEnter choice: " + Ansi.RESET);
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
@@ -1083,18 +1083,18 @@ public class ManageBooks {
                 case "4" -> editField(book, "description");
                 case "5" -> {
                     fileHandling.overrideFile(BOOKS_FILE, books);
-                    System.out.println(Ansi.ORANGE + "Changes saved for \"" + book.getTitle() + "\"." + Ansi.RESET);
+                    System.out.println(Ansi.success("Changes saved for \"" + book.getTitle() + "\"."));
                     return;
                 }
                 case "6", "0" -> {
                     if (consoleUtil.confirmAction("Are you sure you want to exit without saving?")) {
-                        System.out.println(Ansi.RED + "Exiting without saving changes." + Ansi.RESET);
+                        System.out.println(Ansi.info("Exiting without saving changes."));
                         return;
                     } else {
-                        System.out.println(Ansi.ORANGE + "Cancelled." + Ansi.RESET);
+                        System.out.println(Ansi.info("Cancelled."));
                     }
                 }
-                default -> System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                default -> System.out.println(Ansi.warn("Invalid choice. Please try again."));
             }
         }
     }
@@ -1107,7 +1107,7 @@ public class ManageBooks {
         String newValue = scanner.nextLine().trim();
 
         if (newValue.isEmpty()) {
-            System.out.println(Ansi.RED + field.substring(0, 1).toUpperCase() + field.substring(1) + " cannot be empty!" + Ansi.RESET);
+            System.out.println(Ansi.warn(field.substring(0, 1).toUpperCase() + field.substring(1) + " cannot be empty!"));
             return;
         }
 
@@ -1118,6 +1118,6 @@ public class ManageBooks {
             case "description" -> book.setDescription(newValue);
         }
 
-        System.out.println(Ansi.ORANGE + field.substring(0, 1).toUpperCase() + field.substring(1) + " updated." + Ansi.RESET);
+        System.out.println(Ansi.success(field.substring(0, 1).toUpperCase() + field.substring(1) + " updated."));
     }
 }

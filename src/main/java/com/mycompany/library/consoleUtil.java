@@ -15,7 +15,7 @@ import com.mycompany.library.BorrowDetails.BorrowStatus;
 public class consoleUtil {
     
     //================================================
-    // INSTANCE FIELDS
+    // Instance Fields
     //================================================
     private static final Scanner scanner = new Scanner(System.in);
     private final FileHandling fileHandling = new FileHandling();
@@ -24,7 +24,13 @@ public class consoleUtil {
     private static HashMap<String, String> bookTitleCache = new HashMap<>();
 
     //================================================
-    // ENUMS
+    // Constants
+    //================================================
+    private static final String BOOKS_FILE = "books.ser";
+    private static final String DATE_FORMAT = "dd/MM/yy";
+
+    //================================================
+    // Enums
     //================================================
     enum BookColumn {
         INDEX, ID, TITLE, AUTHOR, GENRE, YEAR, LAST_EDITED, AVAILABLE
@@ -35,11 +41,11 @@ public class consoleUtil {
     }
 
     enum ReportColumn {
-        BORROWED, RETURNED, OVERDUE, TOTALBOOKS, TOTALUSERS, TOTALBORROWS
+        TOTALBOOKS,BORROWED, RETURNED, OVERDUE, TOTALUSERS, TOTALBORROWS
     }
 
     //================================================
-    // BOOK TITLE CACHING
+    // Book Title Caching
     //================================================
     
     /**
@@ -47,7 +53,7 @@ public class consoleUtil {
      */
     public static void loadBookTitle() {
         FileHandling fileHandling = new FileHandling();
-        ArrayList<Book> books = fileHandling.readFromFile("books.ser", Book.class);
+        ArrayList<Book> books = fileHandling.readFromFile(BOOKS_FILE, Book.class);
 
         if (books == null || books.isEmpty()) {
             return;
@@ -59,8 +65,107 @@ public class consoleUtil {
         }
     }
 
+    
     //================================================
-    // BORROW STATUS CHECK
+    // Utilities
+    //================================================
+
+    public static String formatDate(Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat(DATE_FORMAT).format(date);
+    }
+
+    public static String truncateString(String str, int length) {
+        if (str == null) return "";
+        if (str.length() <= length) return str;
+        return str.substring(0, length - 3) + "...";
+    }
+
+    public static boolean confirmAction(String message) {
+        System.out.print(Ansi.ORANGE + message + " (y/n): " + Ansi.RESET);
+        String input = scanner.nextLine().trim().toLowerCase();
+
+        while (!input.equals("y") && !input.equals("n")) {
+            System.out.print(Ansi.warn("Invalid input. Please enter 'y' or 'n': "));
+            input = scanner.nextLine().trim().toLowerCase();
+        }
+
+        return input.equals("y");
+    }
+
+    public static boolean detectUnicodeSupport() {
+        // Check for IDE detection via various methods
+        boolean isIDE = detectIDE();
+
+        if (isIDE) {
+            return false;
+        }
+
+        String os = System.getProperty("os.name").toLowerCase();
+        String term = System.getenv("TERM");
+        String conEmu = System.getenv("ConEmuANSI");
+        String wtSession = System.getenv("WT_SESSION");
+        String psModulePath = System.getenv("PSModulePath");
+
+        // Detect old Windows Command Prompt
+        boolean isOldWindowsCmd = os.contains("win") && 
+                                  term == null && 
+                                  wtSession == null && 
+                                  conEmu == null &&
+                                  psModulePath == null;
+
+        if (isOldWindowsCmd) {
+            return false;
+        }
+
+        // Known good environments
+        return (wtSession != null) ||  // Windows Terminal
+               (conEmu != null && conEmu.equalsIgnoreCase("ON")) ||  // ConEmu
+               (psModulePath != null && os.contains("win")) ||  // PowerShell
+               (term != null && (term.contains("xterm") || 
+                                term.contains("ansi") || 
+                                term.contains("vt100") ||
+                                term.contains("screen") ||
+                                term.contains("tmux"))) ||
+               (os.contains("mac") || os.contains("nix") || os.contains("nux"));
+    }
+
+    private static boolean detectIDE() {
+        // Check if System.console() is null (IDEs typically don't have a console)
+        if (System.console() == null) {
+            return true;
+        }
+
+        // Check classpath for common IDEs
+        String classPath = System.getProperty("java.class.path", "").toLowerCase();
+        String[] ideMarkers = {"netbeans", "idea", "eclipse", "vscode"};
+
+        for (String marker : ideMarkers) {
+            if (classPath.contains(marker)) {
+                return true;
+            }
+        }
+
+        // Check system properties
+        if (System.getProperty("netbeans.home") != null ||
+            System.getProperty("idea.home") != null ||
+            System.getProperty("eclipse.home.location") != null) {
+            return true;
+        }
+
+        // Check environment variables
+        if (System.getenv("NETBEANS_HOME") != null ||
+            System.getenv("IDEA_HOME") != null ||
+            System.getenv("ECLIPSE_HOME") != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    //================================================
+    // Borrow Status Check
     //================================================
     
     /**
@@ -91,12 +196,9 @@ public class consoleUtil {
     }
 
     //================================================
-    // TABLE PRINTING
+    // Table Printing
     //================================================
 
-    /**
-     * Generic method to print formatted table for books, borrow records, or reports
-     */
     public static void printTable(ArrayList<?> array, String type, Auth auth) {
         loadBookTitle();
         
@@ -105,7 +207,7 @@ public class consoleUtil {
         
         // Handle empty item list
         if (array == null || array.isEmpty()) {
-            System.out.println(Ansi.RED + "No items available." + Ansi.RESET);
+            System.out.println(Ansi.info("No items available."));
             return;
         }
 
@@ -298,9 +400,9 @@ public class consoleUtil {
         } else if (type.equals("borrow") && col.name().equals("STATUS")) {
             BorrowDetails record = (BorrowDetails) item;
             String color = switch (record.getStatus()) {
-                case BORROWED -> Ansi.YELLOW;
+                case BORROWED -> Ansi.CYAN;
                 case RETURNED -> Ansi.GREEN;
-                case OVERDUE -> Ansi.RED;
+                case OVERDUE -> Ansi.ORANGE;
                 default -> Ansi.RESET;
             };
             return color + paddedValue + Ansi.RESET;
@@ -310,7 +412,7 @@ public class consoleUtil {
     }
 
     //================================================
-    // COLUMN VALUE EXTRACTION
+    // Column Value Extraction
     //================================================
 
     private static String getColumnValue(Enum<?> col, Object item, int index, Auth auth) {
@@ -378,104 +480,7 @@ public class consoleUtil {
     }
 
     //================================================
-    // UTILITY METHODS
-    //================================================
-
-    private static String formatDate(Date date) {
-        if (date == null) return "";
-        return new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
-    }
-
-    public static String truncateString(String str, int length) {
-        if (str == null) return "";
-        if (str.length() <= length) return str;
-        return str.substring(0, length - 3) + "...";
-    }
-
-    public static boolean confirmAction(String message) {
-        System.out.print(Ansi.ORANGE + message + " (y/n): " + Ansi.RESET);
-        String input = scanner.nextLine().trim().toLowerCase();
-
-        while (!input.equals("y") && !input.equals("n")) {
-            System.out.print(Ansi.RED + "Invalid input. Please enter 'y' or 'n': " + Ansi.RESET);
-            input = scanner.nextLine().trim().toLowerCase();
-        }
-
-        return input.equals("y");
-    }
-
-    public static boolean detectUnicodeSupport() {
-        // Check for IDE detection via various methods
-        boolean isIDE = detectIDE();
-
-        if (isIDE) {
-            return false;
-        }
-
-        String os = System.getProperty("os.name").toLowerCase();
-        String term = System.getenv("TERM");
-        String conEmu = System.getenv("ConEmuANSI");
-        String wtSession = System.getenv("WT_SESSION");
-        String psModulePath = System.getenv("PSModulePath");
-
-        // Detect old Windows Command Prompt
-        boolean isOldWindowsCmd = os.contains("win") && 
-                                  term == null && 
-                                  wtSession == null && 
-                                  conEmu == null &&
-                                  psModulePath == null;
-
-        if (isOldWindowsCmd) {
-            return false;
-        }
-
-        // Known good environments
-        return (wtSession != null) ||  // Windows Terminal
-               (conEmu != null && conEmu.equalsIgnoreCase("ON")) ||  // ConEmu
-               (psModulePath != null && os.contains("win")) ||  // PowerShell
-               (term != null && (term.contains("xterm") || 
-                                term.contains("ansi") || 
-                                term.contains("vt100") ||
-                                term.contains("screen") ||
-                                term.contains("tmux"))) ||
-               (os.contains("mac") || os.contains("nix") || os.contains("nux"));
-    }
-
-    private static boolean detectIDE() {
-        // Check if System.console() is null (IDEs typically don't have a console)
-        if (System.console() == null) {
-            return true;
-        }
-
-        // Check classpath for common IDEs
-        String classPath = System.getProperty("java.class.path", "").toLowerCase();
-        String[] ideMarkers = {"netbeans", "idea", "eclipse", "vscode"};
-
-        for (String marker : ideMarkers) {
-            if (classPath.contains(marker)) {
-                return true;
-            }
-        }
-
-        // Check system properties
-        if (System.getProperty("netbeans.home") != null ||
-            System.getProperty("idea.home") != null ||
-            System.getProperty("eclipse.home.location") != null) {
-            return true;
-        }
-
-        // Check environment variables
-        if (System.getenv("NETBEANS_HOME") != null ||
-            System.getenv("IDEA_HOME") != null ||
-            System.getenv("ECLIPSE_HOME") != null) {
-            return true;
-        }
-
-        return false;
-    }
-
-    //================================================
-    // SAMPLE DATA LOADER
+    // sample data loader
     //================================================
 
     public void loadBooks() {

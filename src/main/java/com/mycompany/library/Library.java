@@ -25,12 +25,11 @@ public class Library { //main class where the program executes from
         Auth auth = new Auth();
         
         //Display admin account info just for demonstration purposes
-        System.out.println(Ansi.BOLD + Ansi.BLUE + "Admin account" + Ansi.RESET);
-        System.out.println(Ansi.BLUE + "Username: admin" + Ansi.RESET);
-        System.out.println(Ansi.BLUE + "Password: admin123" + Ansi.RESET);
+        System.out.println(Ansi.info("Admin account:"));
+        System.out.println(Ansi.info("Username: admin"));
+        System.out.println(Ansi.info("Password: admin123"));
 
         while (true) {
-            
             if (!auth.isLoggedIn()) {
                 // login/register menu
                 auth.authMenu(); 

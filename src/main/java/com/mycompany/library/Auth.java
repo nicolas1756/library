@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class Auth {
     
     //================================================
-    // CONSTANTS
+    // constants
     //================================================
     private static final String ACCOUNTS_FILE = "accounts.ser";
     private static final String LIBRARIAN_ROLE = "Librarian";
@@ -18,7 +18,7 @@ public class Auth {
     private static final String EXIT_COMMAND = "0";
     
     //================================================
-    // INSTANCE FIELDS
+    // instance fields
     //================================================
     private final Scanner scanner = new Scanner(System.in);
     private final FileHandling fileHandling = new FileHandling();
@@ -27,7 +27,7 @@ public class Auth {
     private User currentUser;
 
     //================================================
-    // GETTERS & SETTERS
+    // getters & setters
     //================================================
     
     public User getCurrentUser() {
@@ -39,7 +39,7 @@ public class Auth {
     }
 
     //================================================
-    // STATUS CHECKS
+    // status checks
     //================================================
     
     public boolean isLoggedIn() {
@@ -51,7 +51,7 @@ public class Auth {
     }
     
     //================================================
-    // AUTHENTICATION MENU
+    // authentication menu
     //================================================
     
     public void authMenu() {
@@ -68,7 +68,7 @@ public class Auth {
                 case "1" -> login();
                 case "2" -> registerAcc();
                 default -> {
-                    System.out.println(Ansi.RED + "Please try again: Enter only 1 or 2" + Ansi.RESET);
+                    System.out.println(Ansi.warn("Please try again: Enter only 1 or 2"));
                     continue;
                 }
             }
@@ -77,7 +77,7 @@ public class Auth {
     }
     
     //================================================
-    // LOGOUT
+    // logout
     //================================================
     
     public void logout() {
@@ -85,13 +85,13 @@ public class Auth {
     }
     
     //================================================
-    // LOGIN
+    // login
     //================================================
     
 
     public void login() {
         System.out.println("====================" + Ansi.BOLD + " Login " + Ansi.RESET + "===================");
-        System.out.println(Ansi.RED + "Enter 0 to exit" + Ansi.RESET);
+        System.out.println(Ansi.info("Enter 0 to exit"));
         System.out.println("==============================================");
         
         while (true) {
@@ -103,11 +103,11 @@ public class Auth {
             
             if (authenticate(username, password)) {
                 System.out.println("==============================================\n");
-                System.out.println(Ansi.ORANGE + "Login successful!" + Ansi.RESET);
-                System.out.println(Ansi.ORANGE + "Hello, " + getCurrentUser().getFullName() + Ansi.RESET);
+                System.out.println(Ansi.info("Login successful!"));
+                System.out.println(Ansi.info("Hello, " + getCurrentUser().getFullName()));
                 break;
             } else {
-                System.out.println(Ansi.RED + "Incorrect username or password. Please try again.\n" + Ansi.RESET);
+                System.out.println(Ansi.error("Incorrect username or password. Please try again.\n"));
             }
         }
     }
@@ -132,12 +132,12 @@ public class Auth {
     }
     
     //================================================
-    // REGISTRATION
+    // registration
     //================================================
     
     public boolean registerAcc() {
         System.out.println("============" + Ansi.BOLD + " Register New Account " + Ansi.RESET + "============");
-        System.out.println(Ansi.RED + "Enter 0 at any time to cancel" + Ansi.RESET);
+        System.out.println(Ansi.info("Enter 0 at any time to cancel"));
         System.out.println("==============================================");
 
         String fullName = promptForInput("Enter your full name: ", "Fullname");
@@ -158,7 +158,7 @@ public class Auth {
     }
     
     //================================================
-    // INPUT VALIDATION HELPERS
+    // input validation helpers
     //================================================
     
     private String promptForInput(String prompt, String fieldName) {
@@ -171,7 +171,7 @@ public class Auth {
             }
 
             if (input.isEmpty()) {
-                System.out.println(Ansi.RED + fieldName + " can't be empty, please try again." + Ansi.RESET);
+                System.out.println(Ansi.error(fieldName + " can't be empty, please try again."));
                 continue;
             }
 
@@ -188,7 +188,7 @@ public class Auth {
             }
 
             if (password.length() < MIN_PASSWORD_LENGTH) {
-                System.out.println(Ansi.RED + "Password length must be at least " + MIN_PASSWORD_LENGTH + " characters." + Ansi.RESET);
+                System.out.println(Ansi.error("Password length must be at least " + MIN_PASSWORD_LENGTH + " characters."));
                 continue;
             }
 
@@ -208,7 +208,7 @@ public class Auth {
             }
 
             if (accounts != null && isUsernameTaken(accounts, username)) {
-                System.out.println(Ansi.RED + "Username is already taken, please try again." + Ansi.RESET);
+                System.out.println(Ansi.error("Username is already taken, please try again."));
                 continue;
             }
 

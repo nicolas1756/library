@@ -1,0 +1,22 @@
+==============================================
+               Library Report                 
+==============================================
+
+Date: 2025-11-18
+Time: 16:55:05
+
+Total Books:        41
+Total Users:        6
+Total Borrows:      23
+Currently Borrowed: 13
+Returned Books:     5
+Overdue Books:      5
+
+Top 5 Most Borrowed Books:
+==============================================
+1. Harry Potter and the Sorcer... by J.K. Rowling - 2 borrows
+2. To Kill a Mockingbird by Harper Lee - 1 borrows
+3. The Shadow of the Wind by Carlos Ruiz Zafón - 1 borrows
+4. The Picture of Dorian Gray by Oscar Wilde - 1 borrows
+5. The Name of the Wind by Patrick Rothfuss - 1 borrows
+==============================================

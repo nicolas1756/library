@@ -36,35 +36,35 @@ public class Reader extends User {
         System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Logout");
         System.out.println("   -> Exit your account.");
         System.out.println("==============================================");
-        System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
 
 
         String input = scanner.nextLine();
 
         switch (input) {
             case "1":
-                System.out.println(Ansi.ORANGE + "Loading the library's collection..." + Ansi.RESET);
+                System.out.println(Ansi.info("Loading the library's collection..."));
                 manageBooks.displayTable(true);
                 break;
 
             case "2":
-                System.out.println(Ansi.ORANGE + "Fetching your borrowed books..." + Ansi.RESET);
+                System.out.println(Ansi.info("Fetching your borrowed books..."));
                 manageBorrowRecords.getUserBorrowDetails();
                 break;
 
             case "3":
-                System.out.println(Ansi.ORANGE + "Fetching your list of favorited books...\n" + Ansi.RESET);
+                System.out.println(Ansi.info("Fetching your list of favorited books...\n"));
                 ArrayList<String> favoriteBooks = auth.getCurrentUser().getFavoriteBooks();
                 manageBooks.getFavourites(favoriteBooks);
                 break;
 
             case "0":
-                System.out.println(Ansi.RED + "Logging out..." + Ansi.RESET);
+                System.out.println(Ansi.info("Logging out..."));
                 auth.logout();
                 break;
 
             default:
-                System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid choice. Please try again."));
         }
     }
 

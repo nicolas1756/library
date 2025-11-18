@@ -10,6 +10,7 @@ import java.util.ArrayList;
 public class Book implements Serializable {
     private static final long serialVersionUID = 1L;
     private static final SecureRandom random = new SecureRandom(); 
+    
     private final String bookId;
     private String title;
     private String author;

@@ -71,9 +71,7 @@ public class ManageBorrowRecords {
 
     // Helper method to format dates
     private static String formatDate(Date date) {
-        if (date == null) return "";
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(DATE_FORMAT);
-        return sdf.format(date);
+        return consoleUtil.formatDate(date);
     }
 
     // Calculate days overdue
@@ -166,7 +164,7 @@ public class ManageBorrowRecords {
         consoleUtil.printTable(records, "borrow", auth);
 
         if(!records.isEmpty()){
-            System.out.println(Ansi.ORANGE + "\nPlease approach a libarian to return a book" + Ansi.RESET);
+            System.out.println(Ansi.info("\nPlease approach a libarian to return a book"));
             System.out.println("Books can only be returned by library staff.");
             System.out.println("Book returned overdue will result in a RM " + OVERDUE_FEE_PER_DAY + " charge for each day");
         }
@@ -191,7 +189,7 @@ public class ManageBorrowRecords {
             System.out.println(Ansi.ORANGE + "1." + Ansi.RESET + " Return book");
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back to Book List");
             System.out.println("==============================================");
-            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+            System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
 
             String input = scanner.nextLine().trim();
             ArrayList<Book> books = manageBooks.getAllBooks();
@@ -203,14 +201,14 @@ public class ManageBorrowRecords {
                     long daysOverdue = getDaysOverdue(selectedRecord.getDueDate());
                     
                     if(!processReturn(daysOverdue, OVERDUE_FEE_PER_DAY)){
-                        System.out.println(Ansi.RED + "Return process cancelled." + Ansi.RESET);
+                        System.out.println(Ansi.info("Return process cancelled."));
                         break;
                     }
 
                     returnBook(books, selectedRecord);
 
                     fileHandling.overrideFile(BOOKS_FILE, books);
-                    System.out.println(Ansi.ORANGE + "\nBook has been marked as returned" + (daysOverdue > 0 ? " and payment recorded." : "." + Ansi.RESET));
+                    System.out.println(Ansi.success("\nBook has been marked as returned" + (daysOverdue > 0 ? " and payment recorded." : ".")));
 
                     filteredRecords.clear();
                     stayInMenu = false;
@@ -219,11 +217,11 @@ public class ManageBorrowRecords {
 
                 case "0":
                     loop = false;
-                    System.out.println(Ansi.ORANGE + "Returning to book list..." + Ansi.RESET);
+                    System.out.println(Ansi.info("Returning to book list..."));
                     break;
 
                 default:
-                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                    System.out.println(Ansi.info("Invalid choice. Please try again."));
             }
         }
 
@@ -266,7 +264,7 @@ public class ManageBorrowRecords {
 
         //check if no records
         if (records.isEmpty()) {
-            System.out.println(Ansi.RED + "No books available." + Ansi.RESET);
+            System.out.println(Ansi.info("No books available."));
             return;
         }
 
@@ -312,13 +310,13 @@ public class ManageBorrowRecords {
                 default:
                     // Validate numeric input for book selection
                     if (!input.matches("\\d+")) {
-                        System.out.println("\n" + Ansi.RED + "Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit." + Ansi.RESET + "\n");
+                        System.out.println("\n" + Ansi.info("Invalid input. Please enter a valid number, 'F' to filter, or '0' to exit.") + "\n");
                         continue;
                     }
 
                     int index = Integer.parseInt(input) - 1;
                     if (index < 0 || index >= filteredRecords.size()) {
-                        System.out.println("\n" + Ansi.RED + "Invalid index. Please select a number from the table." + Ansi.RESET + "\n");
+                        System.out.println("\n" + Ansi.info("Invalid index. Please select a number from the table.") + "\n");
                         continue;
                     }
 
@@ -328,7 +326,7 @@ public class ManageBorrowRecords {
                         selectRecord(selectedRecord);       
                     }
                     else{
-                        System.out.println("\n" + Ansi.ORANGE + "This book has already been returned." + Ansi.RESET + "\n");
+                        System.out.println("\n" + Ansi.info("This book has already been returned.") + "\n");
                     }
                     
                     records = getAllRecordFromBooks();
@@ -446,13 +444,13 @@ public class ManageBorrowRecords {
 
                 case "" -> {
                     if (filteredRecords.isEmpty()) {
-                        System.out.println(Ansi.RED + "No records found." + Ansi.RESET);
+                        System.out.println(Ansi.warn("No records found."));
                         continue;
                     }
                     return filteredRecords;
                 }
 
-                default -> System.out.println(Ansi.RED + "Invalid choice." + Ansi.RESET);
+                default -> System.out.println(Ansi.warn("Invalid choice."));
             }
 
             filteredRecords = applyAllFiltersAndSearch(records);
@@ -516,7 +514,7 @@ public class ManageBorrowRecords {
                         });
 
                     } catch (DateTimeParseException e) {
-                        System.out.println(Ansi.RED + "Error parsing date range filter. Expected format: dd/MM/yy[,dd/MM/yy]" + Ansi.RESET);
+                        System.out.println(Ansi.RED + "Error parsing date range filter. Expected format: dd/MM/yy. E.g. 01/01/25" + Ansi.RESET);
                     } catch (Exception e) {
                         System.out.println(Ansi.RED + "Error applying due date range filter: " + e.getMessage() + Ansi.RESET);
                     }
@@ -532,7 +530,7 @@ public class ManageBorrowRecords {
         filteredRecords = new ArrayList<>();
         searchQuery = "";
         activeFilters.clear();
-        System.out.println(Ansi.GREEN + "Filters cleared." + Ansi.RESET);
+        System.out.println(Ansi.success("Filters cleared."));
     }
 
     private void setSearchQuery() {
@@ -541,10 +539,10 @@ public class ManageBorrowRecords {
 
         if (query.isEmpty()) {
             searchQuery = "";
-            System.out.println(Ansi.GREEN + "Search cleared." + Ansi.RESET);
+            System.out.println(Ansi.success("Search cleared."));
         } else {
             searchQuery = query;
-            System.out.println(Ansi.GREEN + "Search applied: " + searchQuery + Ansi.RESET);
+            System.out.println(Ansi.success("Search applied: " + searchQuery));
         }
     }
 
@@ -585,11 +583,11 @@ public class ManageBorrowRecords {
 
                         case "0":
                             activeFilters.remove("Status");
-                            System.out.println(Ansi.GREEN + "Status filter cleared." + Ansi.RESET);
+                            System.out.println(Ansi.success("Status filter cleared."));
                             break;
                     
                         default:
-                            System.out.println(Ansi.ORANGE + "Status filter not applied" + Ansi.RESET);
+                            System.out.println(Ansi.info("Status filter not applied"));
                             break;
                     }
 
@@ -598,22 +596,22 @@ public class ManageBorrowRecords {
                 
                 if (status != null) {
                     activeFilters.put("Status", status.toString());
-                    System.out.println(Ansi.GREEN + "Status filter applied: " + status + Ansi.RESET);
+                    System.out.println(Ansi.success("Status filter applied: " + status));
                 }
             }
 
             case "2" -> {
                 while (true) {
                     try {
-                        System.out.print("Enter start due date (dd/MM/yy, empty to skip): ");
+                        System.out.print("Enter start due date (E.g. 01/01/25, empty to skip): ");
                         String start = scanner.nextLine().trim();
-                        System.out.print("Enter end due date (dd/MM/yy, empty to skip): ");
+                        System.out.print("Enter end due date (E.g. 01/01/25, empty to skip): ");
                         String end = scanner.nextLine().trim();
 
                         // If both empty, remove filter and break
                         if (start.isEmpty() && end.isEmpty()) {
                             activeFilters.remove("DueRange");
-                            System.out.println(Ansi.GREEN + "Due date range filter removed." + Ansi.RESET);
+                            System.out.println(Ansi.success("Due date range filter removed."));
                             break;
                         }
 
@@ -642,7 +640,7 @@ public class ManageBorrowRecords {
                         
                         // Check if start date is before end date (if both provided)
                         if (startDate != null && endDate != null && startDate.after(endDate)) {
-                            System.out.println(Ansi.RED + "Start date must be before or equal to end date." + Ansi.RESET);
+                            System.out.println(Ansi.warn("Start date must be before or equal to end date."));
                             continue;
                         }
                         
@@ -651,23 +649,23 @@ public class ManageBorrowRecords {
                         
                         // Better feedback message
                         if (!start.isEmpty() && !end.isEmpty()) {
-                            System.out.println(Ansi.GREEN + "Due date range filter applied: " + start + " to " + end + Ansi.RESET);
+                            System.out.println(Ansi.success("Due date range filter applied: " + start + " to " + end));
                         } else if (!start.isEmpty()) {
-                            System.out.println(Ansi.GREEN + "Due date filter applied: from " + start + " onwards" + Ansi.RESET);
+                            System.out.println(Ansi.success("Due date filter applied: from " + start + " onwards"));
                         } else {
-                            System.out.println(Ansi.GREEN + "Due date filter applied: up to " + end + Ansi.RESET);
+                            System.out.println(Ansi.success("Due date filter applied: up to " + end));
                         }
                         break;
                         
                     } catch (ParseException e) {
-                        System.out.println(Ansi.RED + "Invalid date format. Please use dd/MM/yy (e.g., 01/12/25)" + Ansi.RESET);
+                        System.out.println(Ansi.warn("Invalid date format. Please use dd/MM/yy (E.g. 01/01/25)"));
                     } catch (Exception e) {
-                        System.out.println(Ansi.RED + "An error occurred. Please try again." + Ansi.RESET);
+                        System.out.println(Ansi.error("An error occurred. Please try again."));
                     }
                 }
             }
 
-            default -> System.out.println(Ansi.RED + "Invalid option." + Ansi.RESET);
+            default -> System.out.println(Ansi.warn("Invalid option."));
         }
         
     }

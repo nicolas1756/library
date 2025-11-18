@@ -13,14 +13,14 @@ import java.util.Scanner;
  */
 public class Librarian extends User {
     private static final long serialVersionUID = 1L;
-        
-    public Librarian(String username, String password, String fullName, ArrayList <String> favoriteBooks) {
+
+    public Librarian(String username, String password, String fullName) {
         super(username, password, fullName, "Librarian");
     }
-    
 
     @Override
     public void displayMainMenu(Auth auth) {
+
         ManageBooks manageBooks = new ManageBooks();
         ManageBorrowRecords manageBorrowRecords = new ManageBorrowRecords();
         manageBorrowRecords.setAuth(auth);
@@ -36,24 +36,24 @@ public class Librarian extends User {
         System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Logout");
         System.out.println("   -> Exit your account.");
         System.out.println("==============================================\n");
-        System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+        System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
 
 
         String input = scanner.nextLine();
 
         switch (input) {
             case "1":
-                System.out.println(Ansi.ORANGE + "Fetching books..." + Ansi.RESET);
+                System.out.println(Ansi.info("Fetching books..."));
                 displayManageBooksMenu(auth, scanner, manageBooks);
                 break;
 
             case "2":
-                System.out.println(Ansi.ORANGE + "Fetching borrow records..." + Ansi.RESET);
+                System.out.println(Ansi.info("Fetching borrow records..."));
                 manageBorrowRecords.getAllBorrowDetails();
                 break;
 
             case "3":
-                System.out.println(Ansi.ORANGE + "Generating report..." + Ansi.RESET);
+                System.out.println(Ansi.info("Generating report..."));
                 ManageReport report = new ManageReport();
                 report.setAuth(auth);
                 report.getValues();
@@ -61,13 +61,16 @@ public class Librarian extends User {
                 break;
 
             case "0":
-                System.out.println(Ansi.RED + "Logging out..." + Ansi.RESET);
+                System.out.println(Ansi.info("Logging out..."));
                 auth.logout();
                 break;
 
             default:
-                System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                System.out.println(Ansi.warn("Invalid choice. Please try again."));
         }
+        
+
+        
     }
 
     public void displayManageBooksMenu(Auth auth, Scanner scanner, ManageBooks manageBooks) {
@@ -87,7 +90,7 @@ public class Librarian extends User {
             System.out.println(Ansi.ORANGE + "0." + Ansi.RESET + " Back");
             System.out.println("   -> Goes back to main menu.");
             System.out.println("==============================================\n");
-            System.out.print(Ansi.YELLOW + "Enter your choice: " + Ansi.RESET);
+            System.out.print(Ansi.ORANGE + "Enter your choice: " + Ansi.RESET);
 
             String input = scanner.nextLine();
 
@@ -95,33 +98,32 @@ public class Librarian extends User {
             
             switch (input) {
                 case "1":
-                    System.out.println(Ansi.ORANGE + "Add a book..." + Ansi.RESET + "\n");
+                    System.out.println(Ansi.info("Add a book...") + "\n");
                     manageBooks.addBook();
                     break;
 
                 case "2":
-                    System.out.println(Ansi.ORANGE + "Remove a book..." + Ansi.RESET + "\n");
+                    System.out.println(Ansi.info("Remove a book...") + "\n");
                     manageBooks.removeBook();
                     break;
 
                 case "3":
-                    System.out.println(Ansi.ORANGE + "Edit a book..." + Ansi.RESET + "\n");
+                    System.out.println(Ansi.info("Edit a book...") + "\n");
                     manageBooks.editBook();
                     break;
 
                 case "4":
-                    System.out.println(Ansi.ORANGE + "Printing table..." + Ansi.RESET + "\n");
+                    System.out.println(Ansi.info("Printing table...") + "\n");
                     manageBooks.displayTable(true);
                     break;
 
                 case "0":
                     untilExit = false;
-                    System.out.println(Ansi.ORANGE + "Going back..." + Ansi.RESET + "\n");
-                    auth.getCurrentUser().displayMainMenu(auth);
+                    System.out.println(Ansi.info("Going back...") + "\n");
                     break;
 
                 default:
-                    System.out.println(Ansi.RED + "Invalid choice. Please try again." + Ansi.RESET);
+                    System.out.println(Ansi.warn("Invalid choice. Please try again."));
             }
         
         }

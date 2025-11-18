@@ -2,6 +2,7 @@ package com.mycompany.library;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * @author nic
@@ -25,7 +26,6 @@ public class FileHandling {
         }
     }
 
-    // Generic write method (safe + preserves previous data)
     public <T extends Serializable> boolean appendToFile(String path, T value, Class<T> type) {
 
         ArrayList<T> dataList = readFromFile(path, type);
@@ -83,5 +83,53 @@ public class FileHandling {
         }
 
         return dataList;
+    }
+
+    //==============================================
+    //report handling methods
+    //==============================================
+
+    public void saveReportToTextFile(String fileName, Report currentReport, ArrayList<Book> topBooks, Map<String, Integer> borrowCount, int TITLE_MAX_LENGTH, int TOP_BOOKS_LIMIT) {
+        String filePath = "Reports/" + fileName;
+        try (java.io.FileWriter writer = new java.io.FileWriter(filePath);
+            java.io.BufferedWriter bw = new java.io.BufferedWriter(writer)) {
+            
+            // Header
+            bw.write("==============================================\n");
+            bw.write("               Library Report                 \n");
+            bw.write("==============================================\n\n");
+            bw.write("Date: " + java.time.LocalDate.now() + "\n");
+            bw.write("Time: " + java.time.LocalTime.now().withNano(0) + "\n\n");    
+
+            // Statistics
+            bw.write(String.format("Total Books:        %d\n", currentReport.getTotalBooks()));
+            bw.write(String.format("Total Users:        %d\n", currentReport.getTotalUsers()));
+            bw.write(String.format("Total Borrows:      %d\n", currentReport.getTotalBorrows()));
+            bw.write(String.format("Currently Borrowed: %d\n", currentReport.getBorrowed()));
+            bw.write(String.format("Returned Books:     %d\n", currentReport.getReturned()));
+            bw.write(String.format("Overdue Books:      %d\n\n", currentReport.getOverdue()));
+            
+
+            
+            if (!topBooks.isEmpty()) {
+                bw.write("Top " + TOP_BOOKS_LIMIT + " Most Borrowed Books:\n");
+                bw.write("==============================================\n");
+                for (int i = 0; i < topBooks.size(); i++) {
+                    Book book = topBooks.get(i);
+                    int count = borrowCount.get(book.getBookId());
+                    bw.write(String.format("%d. %s by %s - %d borrows\n",
+                        (i + 1),
+                        consoleUtil.truncateString(book.getTitle(), TITLE_MAX_LENGTH),
+                        book.getAuthor(),
+                        count));
+                }
+            }
+            
+            bw.write("==============================================\n");
+            System.out.println(Ansi.success("Report saved successfully to " + fileName + " in Reports folder."));
+            
+        } catch (java.io.IOException e) {
+            System.err.println(Ansi.error("Error saving report: " + e.getMessage()));
+        }
     }
 }
